@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PodForge Studio</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Primary">
+        <div class="brand">
+          <div class="brand-mark">PF</div>
+          <div>
+            <strong>PodForge</strong>
+            <span>Creator Studio</span>
+          </div>
+        </div>
+
+        <nav class="nav-list">
+          <a class="active" href="#studio">Studio</a>
+          <a href="#editor">Auto Edit</a>
+          <a href="#library">Library</a>
+          <a href="#publish">Publish</a>
+          <a href="#account">Account</a>
+        </nav>
+
+        <section class="creator-card" aria-label="Creator account">
+          <div class="avatar">JS</div>
+          <div>
+            <strong>Jordan Smith</strong>
+            <span>@morningaudio</span>
+          </div>
+          <button class="icon-button" type="button" aria-label="Account settings">...</button>
+        </section>
+      </aside>
+
+      <main class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">All-in-one podcast production</p>
+            <h1>Record, auto-edit, and ship a finished episode.</h1>
+          </div>
+          <div class="topbar-actions">
+            <button class="ghost-button" type="button" id="saveDraftButton">Save Draft</button>
+            <button class="primary-button" type="button" id="publishTopButton">Publish</button>
+          </div>
+        </header>
+
+        <section class="studio-grid" id="studio">
+          <section class="panel capture-panel" aria-labelledby="capture-title">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Capture</p>
+                <h2 id="capture-title">Session Room</h2>
+              </div>
+              <span class="status-pill" id="sessionStatus">Idle</span>
+            </div>
+
+            <div class="mode-strip" role="tablist" aria-label="Podcast mode">
+              <button class="mode-button active" type="button" data-mode="video">Video Podcast</button>
+              <button class="mode-button" type="button" data-mode="audio">Audio Only</button>
+            </div>
+
+            <div class="preview-stage">
+              <video id="cameraPreview" playsinline muted></video>
+              <div class="preview-placeholder" id="previewPlaceholder">
+                <span>Camera and microphone preview</span>
+              </div>
+              <canvas id="audioMeter" width="720" height="120" aria-label="Audio activity meter"></canvas>
+            </div>
+
+            <div class="control-row">
+              <button class="record-button" type="button" id="recordButton" aria-label="Start recording">
+                <span></span>
+              </button>
+              <button class="secondary-button" type="button" id="deviceButton">Enable Devices</button>
+              <button class="secondary-button" type="button" id="liveButton">Go Live</button>
+              <label class="upload-button">
+                Import Footage
+                <input id="importInput" type="file" accept="audio/*,video/*" multiple />
+              </label>
+            </div>
+
+            <div class="session-meta">
+              <label>
+                Episode title
+                <input id="episodeTitle" type="text" value="The New Creator Economy" />
+              </label>
+              <label>
+                Format
+                <select id="formatSelect">
+                  <option>Interview</option>
+                  <option>Solo commentary</option>
+                  <option>Roundtable</option>
+                  <option>News brief</option>
+                </select>
+              </label>
+              <label>
+                Audience
+                <input id="audienceInput" type="text" value="indie creators and podcasters" />
+              </label>
+            </div>
+          </section>
+
+          <section class="panel pipeline-panel" id="editor" aria-labelledby="pipeline-title">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Self-editing</p>
+                <h2 id="pipeline-title">AI Production Queue</h2>
+              </div>
+              <button class="secondary-button compact" type="button" id="runEditButton">Run Edit</button>
+            </div>
+
+            <div class="settings-list">
+              <label class="setting-row">
+                <span>
+                  <strong>Smart cuts</strong>
+                  <small>Remove silence, retakes, and dead air.</small>
+                </span>
+                <input type="checkbox" checked data-setting="Smart cuts" />
+              </label>
+              <label class="setting-row">
+                <span>
+                  <strong>Auto captions</strong>
+                  <small>Create caption track and short clips.</small>
+                </span>
+                <input type="checkbox" checked data-setting="Auto captions" />
+              </label>
+              <label class="setting-row">
+                <span>
+                  <strong>Sound effects</strong>
+                  <small>Place tasteful stingers for audio-only shows.</small>
+                </span>
+                <input type="checkbox" data-setting="Sound effects" />
+              </label>
+              <label class="setting-row">
+                <span>
+                  <strong>Platform versions</strong>
+                  <small>Export landscape, square, vertical, and audio.</small>
+                </span>
+                <input type="checkbox" checked data-setting="Platform versions" />
+              </label>
+            </div>
+
+            <ol class="pipeline-steps" id="pipelineSteps">
+              <li data-step="Ingest raw recording"><span></span>Ingest raw recording</li>
+              <li data-step="Transcribe and detect chapters"><span></span>Transcribe and detect chapters</li>
+              <li data-step="Remove filler and silence"><span></span>Remove filler and silence</li>
+              <li data-step="Balance color and audio"><span></span>Balance color and audio</li>
+              <li data-step="Generate publish package"><span></span>Generate publish package</li>
+            </ol>
+          </section>
+
+          <section class="panel library-panel" id="library" aria-labelledby="library-title">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Autosave</p>
+                <h2 id="library-title">Raw and Finished Assets</h2>
+              </div>
+              <span class="count-pill" id="assetCount">0 files</span>
+            </div>
+            <div class="asset-list" id="assetList">
+              <div class="empty-state">Record or import media to start building the episode package.</div>
+            </div>
+          </section>
+
+          <section class="panel publish-panel" id="publish" aria-labelledby="publish-title">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Distribution</p>
+                <h2 id="publish-title">Monetizable Uploads</h2>
+              </div>
+              <button class="primary-button compact" type="button" id="publishButton">Upload All</button>
+            </div>
+
+            <div class="platform-grid" id="platformGrid">
+              <label><input type="checkbox" checked /> YouTube</label>
+              <label><input type="checkbox" checked /> Spotify</label>
+              <label><input type="checkbox" /> Apple Podcasts</label>
+              <label><input type="checkbox" checked /> TikTok</label>
+              <label><input type="checkbox" /> Patreon</label>
+              <label><input type="checkbox" /> Twitch</label>
+            </div>
+
+            <div class="monetization-box">
+              <span>Estimated package</span>
+              <strong id="packageSummary">No finished episode yet</strong>
+              <small id="publishStatus">Connect accounts to enable real uploads in the next build.</small>
+            </div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="app.js"></script>
+  </body>
+</html>
