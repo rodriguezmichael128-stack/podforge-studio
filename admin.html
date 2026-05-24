@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PodForge Admin</title>
+    <link rel="stylesheet" href="admin.css?v=audience-heatmap-1" />
+  </head>
+  <body>
+    <main class="admin-shell">
+      <section class="admin-dashboard" id="dashboardPanel">
+        <header class="admin-topbar">
+          <div class="brand-row">
+            <div class="brand-mark">PF</div>
+            <div>
+              <strong>PodForge Admin</strong>
+              <span>Owner portal</span>
+            </div>
+          </div>
+          <div class="topbar-actions">
+            <a class="secondary-button" href="/">Open User App</a>
+          </div>
+        </header>
+
+        <section class="hero-panel">
+          <div>
+            <p class="eyebrow">Operations</p>
+            <h1>Admin command center</h1>
+            <p class="muted">Revenue collection, creator uploads, linked platforms, scheduled fees, tester feedback, and operational health.</p>
+          </div>
+          <div class="hero-actions">
+            <span class="status-pill" id="adminModePill">Simulation</span>
+            <button class="primary-button" type="button" id="refreshAdminButton">Refresh</button>
+          </div>
+        </section>
+
+        <section class="metric-grid" aria-label="Admin command center summary">
+          <article>
+            <span>Active creators</span>
+            <strong id="activeCreatorsMetric">0</strong>
+            <small id="creatorTotalMetric">0 total accounts</small>
+          </article>
+          <article>
+            <span>Total uploads</span>
+            <strong id="totalUploadsMetric">0</strong>
+            <small id="uploadsTodayMetric">0 today</small>
+          </article>
+          <article>
+            <span>Gross tracked</span>
+            <strong id="grossRevenueMetric">$0</strong>
+            <small>Across linked platforms</small>
+          </article>
+          <article>
+            <span>PodForge share</span>
+            <strong id="podforgeFeeMetric">$0</strong>
+            <small>10% tracked revenue</small>
+          </article>
+          <article>
+            <span>Scheduled collections</span>
+            <strong id="scheduledRevenueMetric">$0</strong>
+            <small id="overdueRevenueMetric">$0 overdue</small>
+          </article>
+          <article>
+            <span>Collection success</span>
+            <strong id="collectionSuccessMetric">0%</strong>
+            <small id="connectedPlatformsMetric">0 platform links</small>
+          </article>
+        </section>
+
+        <section class="panel admin-controls" aria-label="Admin tools">
+          <label class="search-control">
+            <span>Search</span>
+            <input id="adminSearchInput" type="search" placeholder="Search users, uploads, platforms, feedback..." />
+          </label>
+          <label class="search-control compact-control">
+            <span>Status</span>
+            <select id="adminStatusFilter">
+              <option value="all">All statuses</option>
+              <option value="Active">Active users</option>
+              <option value="Review">Review users</option>
+              <option value="Past due">Past due users</option>
+              <option value="Suspended">Suspended users</option>
+              <option value="New">New feedback</option>
+              <option value="Reviewing">Reviewing feedback</option>
+              <option value="Planned">Planned feedback</option>
+              <option value="Fixed">Fixed feedback</option>
+            </select>
+          </label>
+          <div class="export-actions" aria-label="Admin exports">
+            <a class="secondary-button compact" href="/api/admin/export?type=users">Users CSV</a>
+            <a class="secondary-button compact" href="/api/admin/export?type=revenue">Revenue CSV</a>
+            <a class="secondary-button compact" href="/api/admin/export?type=uploads">Uploads CSV</a>
+            <a class="secondary-button compact" href="/api/admin/export?type=feedback">Feedback CSV</a>
+            <a class="secondary-button compact" href="/api/admin/export?type=audit">Audit CSV</a>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Accounts</p>
+              <h2>User Management</h2>
+            </div>
+            <span class="status-pill" id="userCountPill">0 users</span>
+          </div>
+          <div class="admin-table user-table" id="adminUserList">
+            <div class="empty-state">Creator accounts will appear here.</div>
+          </div>
+        </section>
+
+        <section class="admin-layout">
+          <section class="panel revenue-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Revenue ops</p>
+                <h2>Revenue Collection</h2>
+              </div>
+              <span class="status-pill warning" id="revenueModePill">Simulated</span>
+            </div>
+            <div class="revenue-stack">
+              <article>
+                <span>Collected</span>
+                <strong id="collectedRevenueMetric">$0</strong>
+                <small>Fees already captured</small>
+              </article>
+              <article>
+                <span>Scheduled</span>
+                <strong id="scheduledRevenueCardMetric">$0</strong>
+                <small>Upcoming pay periods</small>
+              </article>
+              <article>
+                <span>Overdue</span>
+                <strong id="overdueRevenueCardMetric">$0</strong>
+                <small>Needs follow-up</small>
+              </article>
+            </div>
+            <div class="collection-list" id="collectionList">
+              <div class="empty-state">Scheduled collections will appear here.</div>
+            </div>
+          </section>
+
+          <section class="panel alert-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Attention</p>
+                <h2>Admin Alerts</h2>
+              </div>
+              <span class="status-pill danger" id="alertCountPill">0 open</span>
+            </div>
+            <div class="alert-list" id="adminAlertList">
+              <div class="empty-state">No admin alerts right now.</div>
+            </div>
+          </section>
+        </section>
+
+        <section class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Uploads</p>
+              <h2>Most Recent Uploads</h2>
+            </div>
+            <span class="status-pill" id="uploadCountPill">Newest first</span>
+          </div>
+          <div class="admin-table upload-table" id="adminUploadList">
+            <div class="empty-state">User uploads will appear here.</div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Platforms</p>
+              <h2>Linked Platform Analytics</h2>
+            </div>
+            <span class="status-pill" id="platformHealthPill">0 links</span>
+          </div>
+          <div class="platform-analytics-grid" id="adminPlatformGrid">
+            <div class="empty-state">Platform analytics will appear here.</div>
+          </div>
+        </section>
+
+        <section class="panel audience-admin-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Audience intelligence</p>
+              <h2>Audience Heatmap</h2>
+            </div>
+            <span class="status-pill ready" id="adminAudiencePeakPill">Peak window</span>
+          </div>
+          <div class="audience-admin-layout">
+            <div>
+              <div class="admin-heatmap" id="adminAudienceHeatmap" aria-label="Audience activity heatmap by day and time">
+                <div class="empty-state">Audience heatmap will appear here.</div>
+              </div>
+              <div class="audience-recommendations" id="audienceRecommendations"></div>
+            </div>
+            <div class="audience-segment-list" id="audienceSegmentList">
+              <div class="empty-state">Audience segments will appear here.</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="admin-layout compact-layout">
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Systems</p>
+                <h2>Operational Health</h2>
+              </div>
+              <span class="status-pill ready" id="uptimeMetric">--</span>
+            </div>
+            <div class="ops-grid" id="operationsGrid">
+              <div class="empty-state">Operational metrics will appear here.</div>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Audit</p>
+                <h2>Admin Activity</h2>
+              </div>
+              <span class="status-pill" id="auditCountPill">0 events</span>
+            </div>
+            <div class="audit-list" id="auditLogList">
+              <div class="empty-state">Admin actions will appear here.</div>
+            </div>
+          </section>
+        </section>
+
+        <section class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Shared tester notes</p>
+              <h2>Feedback Workflow</h2>
+            </div>
+            <span class="status-pill" id="inboxStatus">0 notes</span>
+          </div>
+          <div class="feedback-list" id="adminFeedbackList">
+            <div class="empty-state">No tester feedback has been submitted yet.</div>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <div class="toast" id="adminToast" role="status" aria-live="polite"></div>
+    <script src="admin.js?v=audience-heatmap-1"></script>
+  </body>
+</html>
