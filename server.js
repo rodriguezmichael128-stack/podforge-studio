@@ -497,13 +497,69 @@ const adminAnalyticsSeed = {
     },
     slots: ["6 AM", "12 PM", "6 PM", "9 PM"],
     days: [
-      { day: "Mon", values: [42, 58, 74, 49] },
-      { day: "Tue", values: [47, 61, 78, 53] },
-      { day: "Wed", values: [50, 66, 81, 59] },
-      { day: "Thu", values: [56, 73, 96, 84] },
-      { day: "Fri", values: [52, 68, 89, 91] },
-      { day: "Sat", values: [39, 63, 86, 94] },
-      { day: "Sun", values: [44, 65, 83, 76] },
+      {
+        day: "Mon",
+        values: [
+          { score: 42, platform: "Spotify", segment: "Audio commuters" },
+          { score: 58, platform: "YouTube", segment: "Video-first millennials" },
+          { score: 74, platform: "YouTube", segment: "Video-first millennials" },
+          { score: 49, platform: "TikTok", segment: "Clip discovery" },
+        ],
+      },
+      {
+        day: "Tue",
+        values: [
+          { score: 47, platform: "Spotify", segment: "Audio commuters" },
+          { score: 61, platform: "Spotify", segment: "Audio commuters" },
+          { score: 78, platform: "YouTube", segment: "Video-first millennials" },
+          { score: 53, platform: "TikTok", segment: "Clip discovery" },
+        ],
+      },
+      {
+        day: "Wed",
+        values: [
+          { score: 50, platform: "Spotify", segment: "Audio commuters" },
+          { score: 66, platform: "YouTube", segment: "Video-first millennials" },
+          { score: 81, platform: "YouTube", segment: "Video-first millennials" },
+          { score: 59, platform: "Patreon", segment: "Paid community" },
+        ],
+      },
+      {
+        day: "Thu",
+        values: [
+          { score: 56, platform: "Spotify", segment: "Audio commuters" },
+          { score: 73, platform: "YouTube", segment: "Video-first millennials" },
+          { score: 96, platform: "YouTube", segment: "Video-first millennials" },
+          { score: 84, platform: "Patreon", segment: "Paid community" },
+        ],
+      },
+      {
+        day: "Fri",
+        values: [
+          { score: 52, platform: "Spotify", segment: "Audio commuters" },
+          { score: 68, platform: "YouTube", segment: "Video-first millennials" },
+          { score: 89, platform: "TikTok", segment: "Clip discovery" },
+          { score: 91, platform: "TikTok", segment: "Clip discovery" },
+        ],
+      },
+      {
+        day: "Sat",
+        values: [
+          { score: 39, platform: "Spotify", segment: "Audio commuters" },
+          { score: 63, platform: "YouTube", segment: "Video-first millennials" },
+          { score: 86, platform: "TikTok", segment: "Clip discovery" },
+          { score: 94, platform: "TikTok", segment: "Clip discovery" },
+        ],
+      },
+      {
+        day: "Sun",
+        values: [
+          { score: 44, platform: "Spotify", segment: "Audio commuters" },
+          { score: 65, platform: "Patreon", segment: "Paid community" },
+          { score: 83, platform: "Patreon", segment: "Paid community" },
+          { score: 76, platform: "Spotify", segment: "Audio commuters" },
+        ],
+      },
     ],
     segments: [
       {

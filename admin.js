@@ -94,6 +94,18 @@ function heatLevel(value) {
   return 1;
 }
 
+function heatScore(cell) {
+  return typeof cell === "object" ? Number(cell.score || 0) : Number(cell || 0);
+}
+
+function heatPlatform(cell) {
+  return typeof cell === "object" ? String(cell.platform || "All") : "All";
+}
+
+function heatSegment(cell) {
+  return typeof cell === "object" ? String(cell.segment || "") : "";
+}
+
 function pageLabel(page) {
   const labels = {
     pipeline: "Pipeline",
@@ -391,12 +403,18 @@ function renderAudienceHeatmap(audienceHeatmap) {
             <div class="heatmap-day">${escapeHtml(row.day)}</div>
             ${(row.values || [])
               .map(
-                (value, index) => `
-                  <div class="heat-cell level-${heatLevel(value)}" title="${escapeHtml(row.day)} ${escapeHtml(slots[index])}: ${value}% audience heat">
+                (cell, index) => {
+                  const value = heatScore(cell);
+                  const platform = heatPlatform(cell);
+                  const segment = heatSegment(cell);
+                  return `
+                  <div class="heat-cell level-${heatLevel(value)}" title="${escapeHtml(row.day)} ${escapeHtml(slots[index])}: ${value}% on ${escapeHtml(platform)}${segment ? ` - ${escapeHtml(segment)}` : ""}">
                     <strong>${formatNumber(value)}%</strong>
-                    <small>${value >= 90 ? "Peak" : value >= 76 ? "Hot" : value >= 60 ? "Warm" : "Light"}</small>
+                    <small>${escapeHtml(platform)}</small>
+                    <em>${value >= 90 ? "Peak" : value >= 76 ? "Hot" : value >= 60 ? "Warm" : "Light"}</em>
                   </div>
-                `,
+                `;
+                },
               )
               .join("")}
           `,

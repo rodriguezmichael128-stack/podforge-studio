@@ -459,7 +459,8 @@ h2 {
 }
 
 .heat-cell strong,
-.heat-cell small {
+.heat-cell small,
+.heat-cell em {
   display: block;
 }
 
@@ -472,6 +473,14 @@ h2 {
   font-size: 0.66rem;
   font-weight: 900;
   text-transform: uppercase;
+}
+
+.heat-cell em {
+  color: inherit;
+  font-size: 0.58rem;
+  font-style: normal;
+  font-weight: 850;
+  opacity: 0.74;
 }
 
 .heat-cell.level-1 {

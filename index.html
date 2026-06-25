@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PodForge Studio</title>
-    <link rel="stylesheet" href="styles.css?v=audience-heatmap-1" />
+    <link rel="stylesheet" href="styles.css?v=professional-command-1" />
   </head>
   <body>
     <section class="auth-screen" id="authScreen" aria-labelledby="auth-title">
@@ -107,11 +107,16 @@
       <main class="workspace">
         <header class="topbar">
           <div>
-            <p class="eyebrow">All-in-one podcast production</p>
+            <div class="topbar-kicker">
+              <p class="eyebrow">Creator operations</p>
+              <span class="system-chip">Local studio</span>
+              <span class="system-chip ready">Autosave ready</span>
+            </div>
             <h1>Record, auto-edit, and ship a finished episode.</h1>
             <p class="topbar-copy">A browser-first creator studio for video podcasts, audio shows, live sessions, and publish-ready episode packages.</p>
           </div>
           <div class="topbar-actions">
+            <button class="secondary-button" type="button" id="newEpisodeTopButton">New Episode</button>
             <button class="ghost-button" type="button" id="saveDraftButton">Save Draft</button>
             <button class="primary-button" type="button" id="publishTopButton">Publish</button>
           </div>
@@ -119,20 +124,20 @@
 
         <section class="metric-strip" aria-label="Studio summary">
           <div>
-            <span>Today</span>
-            <strong>3 sessions</strong>
+            <span>Active episodes</span>
+            <strong id="activeEpisodeMetric">0</strong>
           </div>
           <div>
-            <span>Editing saved</span>
-            <strong>42 min</strong>
+            <span>Ready to publish</span>
+            <strong id="readyEpisodeMetric">0</strong>
           </div>
           <div>
-            <span>Publish reach</span>
-            <strong>6 platforms</strong>
+            <span>Open tasks</span>
+            <strong id="openTaskMetric">0</strong>
           </div>
           <div>
-            <span>PodForge share</span>
-            <strong>10%</strong>
+            <span>Tracked revenue</span>
+            <strong id="trackedRevenueMetric">$0</strong>
           </div>
         </section>
 
@@ -142,6 +147,46 @@
               <p class="eyebrow">Episode command center</p>
               <h2 id="pipeline-board-title">Move every show from idea to revenue.</h2>
             </div>
+            <button class="primary-button compact" type="button" id="newEpisodePipelineButton">New Episode</button>
+          </div>
+
+          <div class="pipeline-toolbar" aria-label="Pipeline controls">
+            <label class="pipeline-search">
+              <span>Search</span>
+              <input id="episodeSearchInput" type="search" placeholder="Episode, guest, audience, target..." />
+            </label>
+            <label class="pipeline-filter">
+              <span>Stage</span>
+              <select id="episodeStageFilter">
+                <option value="All">All stages</option>
+                <option value="Idea">Idea</option>
+                <option value="Script">Script</option>
+                <option value="Record">Record</option>
+                <option value="Edit">Edit</option>
+                <option value="Review">Review</option>
+                <option value="Publish">Publish</option>
+                <option value="Analyze">Analyze</option>
+              </select>
+            </label>
+            <button class="ghost-button compact" type="button" id="clearPipelineFiltersButton">Clear</button>
+          </div>
+
+          <div class="pipeline-insights" aria-label="Selected episode details">
+            <article class="active-episode-card">
+              <span class="insight-label">Selected episode</span>
+              <strong id="activeEpisodeTitle">No episode selected</strong>
+              <p id="activeEpisodeSummary">Create or select an episode to build its production package.</p>
+            </article>
+            <article>
+              <span class="insight-label">Next action</span>
+              <strong id="activeEpisodeAction">Choose a show</strong>
+              <p id="activeEpisodeDeadline">Pipeline status will appear here.</p>
+            </article>
+            <article>
+              <span class="insight-label">Readiness</span>
+              <strong id="activeEpisodeReadiness">0%</strong>
+              <div class="readiness-meter" aria-hidden="true"><span id="activeEpisodeReadinessBar"></span></div>
+            </article>
           </div>
 
           <div class="workflow-track" aria-label="Production workflow">
@@ -930,6 +975,6 @@
     </section>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="app.js?v=audience-heatmap-1"></script>
+    <script src="app.js?v=professional-command-1"></script>
   </body>
 </html>

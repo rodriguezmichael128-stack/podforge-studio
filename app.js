@@ -10,6 +10,8 @@ const state = {
   feedback: [],
   feedbackLoaded: false,
   selectedEpisodeId: "",
+  pipelineSearch: "",
+  pipelineStageFilter: "All",
   revenue: null,
   editRun: 0,
   audioContext: null,
@@ -40,6 +42,25 @@ const accountStorageKey = "podforgeAccount";
 const feedbackStorageKey = "podforgeFeedback";
 const episodeStorageKey = "podforgeEpisodes";
 const revenueStorageKey = "podforgeRevenue";
+const pipelineStages = ["Idea", "Script", "Record", "Edit", "Review", "Publish", "Analyze"];
+const stageActions = {
+  Idea: "Shape the angle",
+  Script: "Lock the rundown",
+  Record: "Run the session",
+  Edit: "Build the package",
+  Review: "Collect approval",
+  Publish: "Schedule release",
+  Analyze: "Review performance",
+};
+const stageDeadlines = {
+  Idea: "Draft target by Friday",
+  Script: "Rundown due tomorrow",
+  Record: "Session window today",
+  Edit: "First cut due in 24 hours",
+  Review: "Approval needed before publish",
+  Publish: "Release desk is ready",
+  Analyze: "Check the first 48 hours",
+};
 
 const defaultEpisodes = [
   {
@@ -182,19 +203,75 @@ const defaultRevenueState = {
 const audienceHeatmapData = {
   peak: "Thu 7 PM",
   cells: [
-    { day: "Mon", values: [34, 48, 61, 42] },
-    { day: "Tue", values: [41, 57, 69, 50] },
-    { day: "Wed", values: [46, 62, 74, 56] },
-    { day: "Thu", values: [52, 71, 92, 67] },
-    { day: "Fri", values: [49, 64, 84, 73] },
-    { day: "Sat", values: [38, 58, 79, 88] },
-    { day: "Sun", values: [44, 63, 81, 70] },
+    {
+      day: "Mon",
+      values: [
+        { score: 34, platform: "Spotify" },
+        { score: 48, platform: "YouTube" },
+        { score: 61, platform: "YouTube" },
+        { score: 42, platform: "TikTok" },
+      ],
+    },
+    {
+      day: "Tue",
+      values: [
+        { score: 41, platform: "Spotify" },
+        { score: 57, platform: "Spotify" },
+        { score: 69, platform: "YouTube" },
+        { score: 50, platform: "TikTok" },
+      ],
+    },
+    {
+      day: "Wed",
+      values: [
+        { score: 46, platform: "Spotify" },
+        { score: 62, platform: "YouTube" },
+        { score: 74, platform: "YouTube" },
+        { score: 56, platform: "TikTok" },
+      ],
+    },
+    {
+      day: "Thu",
+      values: [
+        { score: 52, platform: "Spotify" },
+        { score: 71, platform: "YouTube" },
+        { score: 92, platform: "YouTube" },
+        { score: 67, platform: "Patreon" },
+      ],
+    },
+    {
+      day: "Fri",
+      values: [
+        { score: 49, platform: "Spotify" },
+        { score: 64, platform: "YouTube" },
+        { score: 84, platform: "TikTok" },
+        { score: 73, platform: "TikTok" },
+      ],
+    },
+    {
+      day: "Sat",
+      values: [
+        { score: 38, platform: "Spotify" },
+        { score: 58, platform: "YouTube" },
+        { score: 79, platform: "TikTok" },
+        { score: 88, platform: "TikTok" },
+      ],
+    },
+    {
+      day: "Sun",
+      values: [
+        { score: 44, platform: "Spotify" },
+        { score: 63, platform: "Patreon" },
+        { score: 81, platform: "Patreon" },
+        { score: 70, platform: "Spotify" },
+      ],
+    },
   ],
   slots: ["Morning", "Midday", "Evening", "Late"],
   insights: [
-    ["Best release window", "Thu 6-9 PM"],
-    ["Strongest segment", "25-34 video-first listeners"],
-    ["Clip opportunity", "Sat late posts drive saves"],
+    ["Best release window", "YouTube Thu 6-9 PM"],
+    ["Strongest audio slot", "Spotify Tue morning"],
+    ["Clip opportunity", "TikTok Sat late posts"],
   ],
 };
 
@@ -328,6 +405,81 @@ function statusClass(status) {
 
 function selectedEpisode() {
   return state.episodes.find((episode) => episode.id === state.selectedEpisodeId) || state.episodes[0];
+}
+
+function stageIndex(stage) {
+  return Math.max(0, pipelineStages.indexOf(stage));
+}
+
+function episodeProgress(episode) {
+  if (!episode) return 0;
+  return Math.min(100, Math.round(((stageIndex(episode.stage) + 1) / pipelineStages.length) * 100));
+}
+
+function episodeReadiness(episode) {
+  if (!episode) return 0;
+  const base = episodeProgress(episode);
+  const detailBonus = [episode.guest, episode.audience, episode.target, episode.goal]
+    .filter((item) => String(item || "").trim().length > 2).length * 4;
+  return Math.min(100, base + detailBonus);
+}
+
+function episodeOpenTaskCount(episode) {
+  if (!episode) return 0;
+  return Math.max(0, pipelineStages.length - stageIndex(episode.stage) - 1);
+}
+
+function nextPipelineStage(stage) {
+  return pipelineStages[Math.min(pipelineStages.length - 1, stageIndex(stage) + 1)];
+}
+
+function episodeSearchText(episode) {
+  return [episode.title, episode.status, episode.format, episode.type, episode.audience, episode.goal, episode.guest, episode.target, episode.stage]
+    .join(" ")
+    .toLowerCase();
+}
+
+function visibleEpisodes() {
+  const search = state.pipelineSearch.trim().toLowerCase();
+  return state.episodes.filter((episode) => {
+    const stageMatch = state.pipelineStageFilter === "All" || episode.stage === state.pipelineStageFilter;
+    const searchMatch = !search || episodeSearchText(episode).includes(search);
+    return stageMatch && searchMatch;
+  });
+}
+
+function renderStudioMetrics() {
+  const activeCount = state.episodes.length;
+  const readyCount = state.episodes.filter((episode) => ["Publish", "Analyze"].includes(episode.stage)).length;
+  const openTasks = state.episodes.reduce((total, episode) => total + episodeOpenTaskCount(episode), 0);
+  const totals = state.revenue ? revenueTotals() : { gross: 0 };
+
+  $("#activeEpisodeMetric").textContent = String(activeCount);
+  $("#readyEpisodeMetric").textContent = String(readyCount);
+  $("#openTaskMetric").textContent = String(openTasks);
+  $("#trackedRevenueMetric").textContent = formatCurrency(totals.gross || 0);
+}
+
+function renderPipelineSummary() {
+  const episode = selectedEpisode();
+  const readiness = episodeReadiness(episode);
+  const readinessBar = $("#activeEpisodeReadinessBar");
+
+  $("#activeEpisodeTitle").textContent = episode?.title || "No episode selected";
+  $("#activeEpisodeSummary").textContent = episode
+    ? `${episode.format} for ${episode.audience || "your audience"} with ${episode.target || "a platform target"}.`
+    : "Create or select an episode to build its production package.";
+  $("#activeEpisodeAction").textContent = episode ? stageActions[episode.stage] || "Choose a next step" : "Choose a show";
+  $("#activeEpisodeDeadline").textContent = episode ? stageDeadlines[episode.stage] || "Pipeline status is current." : "Pipeline status will appear here.";
+  $("#activeEpisodeReadiness").textContent = `${readiness}%`;
+  readinessBar.style.width = `${readiness}%`;
+}
+
+function renderPipelineControls() {
+  const searchInput = $("#episodeSearchInput");
+  const stageFilter = $("#episodeStageFilter");
+  if (searchInput && document.activeElement !== searchInput) searchInput.value = state.pipelineSearch;
+  if (stageFilter) stageFilter.value = state.pipelineStageFilter;
 }
 
 function pageLabel(page) {
@@ -782,34 +934,89 @@ function selectEpisode(id) {
   renderEpisodes();
 }
 
+function advanceEpisode(id) {
+  const episode = state.episodes.find((item) => item.id === id);
+  if (!episode) return;
+  const nextStage = nextPipelineStage(episode.stage);
+  state.selectedEpisodeId = episode.id;
+  episode.stage = nextStage;
+  episode.status = stageToStatus(nextStage);
+  saveStoredEpisodes();
+  syncEpisodeToWorkspace(episode);
+  updateWorkflow(nextStage);
+}
+
 function renderEpisodes() {
   const episodeGrid = $("#episodeGrid");
-  episodeGrid.innerHTML = state.episodes
+  const episodes = visibleEpisodes();
+
+  if (!episodes.length) {
+    episodeGrid.innerHTML = `
+      <div class="empty-state pipeline-empty">
+        No episodes match the current pipeline view.
+      </div>
+    `;
+    renderStudioMetrics();
+    renderPipelineSummary();
+    renderPipelineControls();
+    return;
+  }
+
+  episodeGrid.innerHTML = episodes
     .map(
-      (episode) => `
-        <article class="episode-card ${episode.id === state.selectedEpisodeId ? "selected" : ""}" data-episode-id="${episode.id}" tabindex="0" role="button" aria-label="Select ${escapeHtml(episode.title)}">
-          <span class="episode-status ${statusClass(episode.status)}">${escapeHtml(episode.status)}</span>
+      (episode) => {
+        const progress = episodeProgress(episode);
+        const readiness = episodeReadiness(episode);
+        const nextStage = nextPipelineStage(episode.stage);
+        const isFinalStage = nextStage === episode.stage;
+
+        return `
+        <article class="episode-card ${episode.id === state.selectedEpisodeId ? "selected" : ""}" data-episode-id="${episode.id}" style="--progress: ${progress}%">
+          <div class="episode-card-top">
+            <span class="episode-status ${statusClass(episode.status)}">${escapeHtml(episode.status)}</span>
+            <span class="episode-readiness">${readiness}% ready</span>
+          </div>
           <h3>${escapeHtml(episode.title)}</h3>
           <p>${escapeHtml(episode.goal)}</p>
+          <div class="episode-progress" aria-hidden="true"><span></span></div>
+          <dl class="episode-details">
+            <div><dt>Guest</dt><dd>${escapeHtml(episode.guest || "Solo")}</dd></div>
+            <div><dt>Audience</dt><dd>${escapeHtml(episode.audience || "General")}</dd></div>
+            <div><dt>Next</dt><dd>${escapeHtml(stageActions[episode.stage] || "Review")}</dd></div>
+          </dl>
           <div class="episode-card-footer">
             <span>${escapeHtml(episode.format)}</span>
             <span>${episode.type === "audio" ? "Audio only" : "Video podcast"}</span>
             <span>${escapeHtml(episode.target)}</span>
           </div>
+          <div class="episode-actions">
+            <button class="secondary-button compact" type="button" data-episode-select="${episode.id}">Open</button>
+            <button class="ghost-button compact" type="button" data-episode-next="${episode.id}" ${isFinalStage ? "disabled" : ""}>${isFinalStage ? "Complete" : `Move to ${nextStage}`}</button>
+          </div>
         </article>
-      `,
+      `;
+      },
     )
     .join("");
 
-  $$("#episodeGrid .episode-card").forEach((card) => {
-    card.addEventListener("click", () => selectEpisode(card.dataset.episodeId));
-    card.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        selectEpisode(card.dataset.episodeId);
-      }
+  $$("[data-episode-id]").forEach((card) => {
+    card.addEventListener("click", (event) => {
+      if (event.target.closest("button")) return;
+      selectEpisode(card.dataset.episodeId);
     });
   });
+
+  $$("[data-episode-select]").forEach((button) => {
+    button.addEventListener("click", () => selectEpisode(button.dataset.episodeSelect));
+  });
+
+  $$("[data-episode-next]").forEach((button) => {
+    button.addEventListener("click", () => advanceEpisode(button.dataset.episodeNext));
+  });
+
+  renderStudioMetrics();
+  renderPipelineSummary();
+  renderPipelineControls();
 }
 
 function openEpisodeModal() {
@@ -1159,6 +1366,8 @@ async function startRecording() {
       detail: `${state.mode.toUpperCase()} recording saved at ${formatTime()}`,
       url,
       size: blob.size,
+      mediaKind: state.mode,
+      mimeType: blob.type,
     });
     runEditPipeline();
   });
@@ -1180,12 +1389,23 @@ function stopRecording() {
 }
 
 function addAsset(asset) {
-  state.assets.unshift({ id: crypto.randomUUID(), createdAt: new Date(), ...asset });
+  const nextAsset = {
+    id: crypto.randomUUID(),
+    createdAt: new Date(),
+    mediaKind: asset.mediaKind || (asset.mimeType || "").split("/")[0] || "",
+    ...asset,
+  };
+  state.assets.unshift(nextAsset);
   renderAssets();
+  return nextAsset;
 }
 
 function assetIsAudio(asset) {
-  return /audio|AUDIO/.test(asset.detail) || asset.title.toLowerCase().match(/\.(mp3|wav|m4a|aac|ogg|webm)$/);
+  if (asset.mediaKind === "audio") return true;
+  if (asset.mediaKind === "video") return false;
+  if (String(asset.mimeType || "").startsWith("audio/")) return true;
+  if (String(asset.mimeType || "").startsWith("video/")) return false;
+  return /audio/i.test(asset.detail || "") || /\.(mp3|wav|m4a|aac|ogg)$/i.test(asset.title || "");
 }
 
 function assetBadge(asset) {
@@ -1193,21 +1413,30 @@ function assetBadge(asset) {
   return assetIsAudio(asset) ? "AU" : "VD";
 }
 
-function selectAsset(id) {
+function selectAsset(id, options = {}) {
   const asset = state.assets.find((item) => item.id === id);
   if (!asset) return;
+
+  if (options.reveal && window.location.hash !== "#library") {
+    window.location.hash = "library";
+  }
 
   const player = $("#assetPlayer");
   const audio = $("#assetAudioPlayer");
   const video = $("#assetVideoPlayer");
+  const activePlayer = assetIsAudio(asset) ? audio : video;
   player.querySelector("strong").textContent = asset.title;
   player.querySelector("p").textContent = asset.url
     ? `${asset.detail} ${asset.size ? `- ${formatBytes(asset.size)}` : ""}`
     : "This prototype asset has no playable media attached yet.";
+  audio.pause();
+  video.pause();
   audio.hidden = true;
   video.hidden = true;
   audio.removeAttribute("src");
   video.removeAttribute("src");
+  audio.load();
+  video.load();
 
   if (asset.url && assetIsAudio(asset)) {
     audio.src = asset.url;
@@ -1218,6 +1447,20 @@ function selectAsset(id) {
   }
 
   $$(".asset-item, .recent-item").forEach((item) => item.classList.toggle("selected", item.dataset.assetId === id));
+
+  if (!asset.url) {
+    showToast("This asset does not have playable media yet.");
+    return;
+  }
+
+  activePlayer.load();
+  if (options.autoplay) {
+    activePlayer.play().then(() => showToast(`Playing ${assetIsAudio(asset) ? "audio" : "video"} recording.`)).catch(() => {
+      showToast("Recording is loaded. Press play in the media player.");
+    });
+  } else {
+    showToast("Recording loaded in the Library player.");
+  }
 }
 
 function renameAsset(id) {
@@ -1252,7 +1495,7 @@ function bindAssetActions() {
     button.addEventListener("click", (event) => {
       event.stopPropagation();
       const { assetAction, assetId } = button.dataset;
-      if (assetAction === "play") selectAsset(assetId);
+      if (assetAction === "play") selectAsset(assetId, { autoplay: true, reveal: Boolean(button.closest(".recent-item")) });
       if (assetAction === "rename") renameAsset(assetId);
       if (assetAction === "delete") deleteAsset(assetId);
       if (assetAction === "edit") sendAssetToEdit(assetId);
@@ -1266,6 +1509,7 @@ function renderAssets() {
 
   if (!state.assets.length) {
     assetList.innerHTML = '<div class="empty-state">Record or import media to start building the episode package.</div>';
+    bindAssetActions();
     return;
   }
 
@@ -1288,6 +1532,7 @@ function renderAssets() {
       `,
     )
     .join("");
+  bindAssetActions();
 }
 
 function renderRecentRecordings() {
@@ -1312,7 +1557,6 @@ function renderRecentRecordings() {
       `,
     )
     .join("");
-  bindAssetActions();
 }
 
 function escapeHtml(value) {
@@ -1468,10 +1712,10 @@ function updateReviewScore() {
 function applyBrand(brand) {
   const preview = $(".cover-preview");
   const styles = {
-    coral: "radial-gradient(circle at 18% 20%, rgba(255,255,255,0.26), transparent 8rem), linear-gradient(135deg, #ff5a66, #6b5cff 55%, #11a6a2)",
-    teal: "radial-gradient(circle at 18% 20%, rgba(255,255,255,0.26), transparent 8rem), linear-gradient(135deg, #11a6a2, #dff3ff 54%, #20172f)",
-    violet: "radial-gradient(circle at 18% 20%, rgba(255,255,255,0.26), transparent 8rem), linear-gradient(135deg, #6b5cff, #ff5a66 58%, #20172f)",
-    yellow: "radial-gradient(circle at 18% 20%, rgba(255,255,255,0.3), transparent 8rem), linear-gradient(135deg, #f4bf45, #ff7a70 56%, #11a6a2)",
+    coral: "linear-gradient(135deg, #d83b55, #2563eb 56%, #0ea5a4)",
+    teal: "linear-gradient(135deg, #0ea5a4, #dff3ff 54%, #121826)",
+    violet: "linear-gradient(135deg, #7c3aed, #2563eb 58%, #121826)",
+    yellow: "linear-gradient(135deg, #f59e0b, #49c7c3 56%, #2563eb)",
   };
   preview.style.background = styles[brand] || styles.coral;
   $$(".swatch").forEach((swatch) => swatch.classList.toggle("active", swatch.dataset.brand === brand));
@@ -1483,6 +1727,14 @@ function heatLevel(value) {
   if (value >= 55) return 3;
   if (value >= 40) return 2;
   return 1;
+}
+
+function heatScore(cell) {
+  return typeof cell === "object" ? Number(cell.score || 0) : Number(cell || 0);
+}
+
+function heatPlatform(cell) {
+  return typeof cell === "object" ? String(cell.platform || "All") : "All";
 }
 
 function renderAudienceHeatmap() {
@@ -1499,11 +1751,16 @@ function renderAudienceHeatmap() {
           <div class="heatmap-day">${escapeHtml(row.day)}</div>
           ${row.values
             .map(
-              (value, index) => `
-                <div class="heat-cell level-${heatLevel(value)}" title="${escapeHtml(row.day)} ${escapeHtml(audienceHeatmapData.slots[index])}: ${value}%">
+              (cell, index) => {
+                const value = heatScore(cell);
+                const platform = heatPlatform(cell);
+                return `
+                <div class="heat-cell level-${heatLevel(value)}" title="${escapeHtml(row.day)} ${escapeHtml(audienceHeatmapData.slots[index])}: ${value}% on ${escapeHtml(platform)}">
                   <strong>${value}%</strong>
+                  <small>${escapeHtml(platform)}</small>
                 </div>
-              `,
+              `;
+              },
             )
             .join("")}
         `,
@@ -1596,8 +1853,23 @@ liveButton.addEventListener("click", toggleLive);
 $("#runEditButton").addEventListener("click", runEditPipeline);
 $("#publishButton").addEventListener("click", publishAll);
 $("#publishTopButton").addEventListener("click", publishAll);
-$("#saveDraftButton").addEventListener("click", () => showToast("Draft saved locally for this prototype."));
+$("#saveDraftButton").addEventListener("click", () => showToast("Workspace draft saved locally."));
 $("#newEpisodeButton").addEventListener("click", openEpisodeModal);
+$("#newEpisodeTopButton").addEventListener("click", openEpisodeModal);
+$("#newEpisodePipelineButton").addEventListener("click", openEpisodeModal);
+$("#episodeSearchInput").addEventListener("input", (event) => {
+  state.pipelineSearch = event.target.value;
+  renderEpisodes();
+});
+$("#episodeStageFilter").addEventListener("change", (event) => {
+  state.pipelineStageFilter = event.target.value;
+  renderEpisodes();
+});
+$("#clearPipelineFiltersButton").addEventListener("click", () => {
+  state.pipelineSearch = "";
+  state.pipelineStageFilter = "All";
+  renderEpisodes();
+});
 $("#generateRundownButton").addEventListener("click", generateRundown);
 $("#inviteGuestButton").addEventListener("click", () => {
   $("#guestInviteLink").textContent = `podforge.test/guest/${crypto.randomUUID().slice(0, 8)}`;
@@ -1660,6 +1932,8 @@ importInput.addEventListener("change", (event) => {
       detail: `Imported ${file.type.startsWith("audio") ? "audio" : "video"} footage`,
       url: URL.createObjectURL(file),
       size: file.size,
+      mediaKind: file.type.startsWith("audio") ? "audio" : "video",
+      mimeType: file.type,
     });
   });
   if (event.target.files?.length) runEditPipeline();
