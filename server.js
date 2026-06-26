@@ -8,7 +8,8 @@ const root = __dirname;
 loadEnv(path.join(root, ".env"));
 
 const port = Number(process.env.PORT || 4175);
-const baseUrl = process.env.PUBLIC_BASE_URL || `http://127.0.0.1:${port}`;
+const host = process.env.HOST || "127.0.0.1";
+const baseUrl = process.env.PUBLIC_BASE_URL || `http://${host}:${port}`;
 const feedbackFile = path.join(root, "data", "feedback.json");
 const adminDataFile = path.join(root, "data", "admin-store.json");
 const adminPath = process.env.ADMIN_PATH || "/admin";
@@ -1418,6 +1419,6 @@ const server = http.createServer(async (request, response) => {
   }
 });
 
-server.listen(port, "127.0.0.1", () => {
-  console.log(`PodForge Studio running at http://127.0.0.1:${port}`);
+server.listen(port, host, () => {
+  console.log(`PodForge Studio running at http://${host}:${port}`);
 });
