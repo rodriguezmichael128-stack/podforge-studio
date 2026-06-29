@@ -12,11 +12,14 @@ const host = process.env.HOST || "127.0.0.1";
 const baseUrl = process.env.PUBLIC_BASE_URL || `http://${host}:${port}`;
 const feedbackFile = path.join(root, "data", "feedback.json");
 const adminDataFile = path.join(root, "data", "admin-store.json");
+const accountsFile = path.join(root, "data", "accounts.json");
 const adminPath = process.env.ADMIN_PATH || "/admin";
 const adminPassword = process.env.ADMIN_PASSWORD || "";
 const adminLoginRequired = process.env.ADMIN_LOGIN_REQUIRED !== "false";
 const adminSessionHours = Number(process.env.ADMIN_SESSION_HOURS || 12);
+const userSessionDays = Number(process.env.USER_SESSION_DAYS || 30);
 const adminSessions = new Map();
+const userSessions = new Map();
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY || "";
 const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
 const liveChargesEnabled = process.env.PODFORGE_ENABLE_LIVE_CHARGES === "true";
@@ -114,6 +117,105 @@ function requireAdmin(request) {
   throw error;
 }
 
+function normalizeEmail(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function readAccounts() {
+  try {
+    const store = JSON.parse(fs.readFileSync(accountsFile, "utf8"));
+    return { users: Array.isArray(store.users) ? store.users : [] };
+  } catch (error) {
+    if (error.code !== "ENOENT") console.warn(`Accounts read failed: ${error.message}`);
+    return { users: [] };
+  }
+}
+
+function writeAccounts(store) {
+  fs.mkdirSync(path.dirname(accountsFile), { recursive: true });
+  fs.writeFileSync(accountsFile, JSON.stringify({ users: Array.isArray(store.users) ? store.users : [] }, null, 2));
+}
+
+function publicAccount(account) {
+  if (!account) return null;
+  return {
+    id: account.id,
+    fullName: account.fullName,
+    phone: account.phone,
+    email: account.email,
+    termsAccepted: Boolean(account.termsAccepted),
+    termsAcceptedAt: account.termsAcceptedAt,
+    revenueSharePercent: account.revenueSharePercent || 10,
+    createdAt: account.createdAt,
+    updatedAt: account.updatedAt,
+  };
+}
+
+function hashPassword(password, salt = crypto.randomBytes(16).toString("hex")) {
+  const hash = crypto.scryptSync(String(password || ""), salt, 64).toString("hex");
+  return { salt, hash };
+}
+
+function verifyPassword(account, password) {
+  if (!account?.passwordSalt || !account?.passwordHash) return false;
+  const candidate = hashPassword(password, account.passwordSalt).hash;
+  return safeCompare(candidate, account.passwordHash);
+}
+
+function validateAccountPayload(payload, options = {}) {
+  const requirePassword = options.requirePassword !== false;
+  const fullName = String(payload.fullName || "").trim();
+  const phone = String(payload.phone || "").trim();
+  const email = String(payload.email || "").trim();
+  const password = String(payload.password || "");
+  const verifyPasswordValue = String(payload.verifyPassword || payload.password || "");
+  const phoneDigits = phone.replace(/\D/g, "");
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (fullName.split(/\s+/).filter(Boolean).length < 2) return "Enter a first and last name.";
+  if (phoneDigits.length < 10) return "Enter a valid phone number.";
+  if (!emailPattern.test(email)) return "Enter a valid email address.";
+  if (requirePassword && password.length < 8) return "Password must be at least 8 characters.";
+  if (requirePassword && password !== verifyPasswordValue) return "Passwords do not match.";
+  if (requirePassword && !payload.termsAccepted) return "You must agree to the Terms and Services.";
+  return "";
+}
+
+function findAccountByEmail(store, email) {
+  const emailKey = normalizeEmail(email);
+  return store.users.find((user) => user.emailKey === emailKey || normalizeEmail(user.email) === emailKey);
+}
+
+function createUserSession(response, account) {
+  const token = crypto.randomBytes(32).toString("hex");
+  const expiresAt = Date.now() + userSessionDays * 24 * 60 * 60 * 1000;
+  userSessions.set(token, { accountId: account.id, expiresAt });
+  setCookie(response, "podforge_user", token, { maxAge: userSessionDays * 24 * 60 * 60 });
+  return { token, expiresAt };
+}
+
+function accountFromRequest(request) {
+  const token = parseCookies(request).podforge_user;
+  if (!token) return null;
+
+  const session = userSessions.get(token);
+  if (!session || session.expiresAt < Date.now()) {
+    userSessions.delete(token);
+    return null;
+  }
+
+  return readAccounts().users.find((account) => account.id === session.accountId) || null;
+}
+
+function requireUser(request) {
+  const account = accountFromRequest(request);
+  if (account) return account;
+  const error = new Error("Create or sign in to your account first.");
+  error.statusCode = 401;
+  error.authRequired = true;
+  throw error;
+}
+
 function readFeedbackItems() {
   try {
     const items = JSON.parse(fs.readFileSync(feedbackFile, "utf8"));
@@ -129,7 +231,7 @@ function writeFeedbackItems(items) {
   fs.writeFileSync(feedbackFile, JSON.stringify(items, null, 2));
 }
 
-function normalizeFeedback(payload, request) {
+function normalizeFeedback(payload, request, account) {
   const note = String(payload.note || "").trim();
   if (note.length < 4) {
     const error = new Error("Add a little more detail before submitting.");
@@ -143,11 +245,13 @@ function normalizeFeedback(payload, request) {
     page: String(payload.page || "pipeline").slice(0, 40),
     type: String(payload.type || "Idea").slice(0, 40),
     note: note.slice(0, 1200),
-    contact: String(payload.contact || "").trim().slice(0, 160),
+    contact: String(payload.contact || account?.email || "").trim().slice(0, 160),
     createdAt: now.toISOString(),
     timeLabel: now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     source: "shared-test-link",
     testerIp: request.socket.remoteAddress || "",
+    accountId: account?.id || "",
+    accountEmail: account?.email || "",
   };
 }
 
@@ -216,6 +320,37 @@ function writeAdminStore(store) {
   fs.writeFileSync(adminDataFile, JSON.stringify(normalizeAdminStore(store), null, 2));
 }
 
+function adminUserFromAccount(account, existing = {}) {
+  return {
+    id: account.id,
+    fullName: account.fullName,
+    phone: account.phone,
+    email: account.email,
+    status: existing.status || "Active",
+    plan: existing.plan || "Tester",
+    role: existing.role || "Creator",
+    joinedAt: account.createdAt || account.termsAcceptedAt || new Date().toISOString(),
+    lastActiveAt: account.updatedAt || account.createdAt || new Date().toISOString(),
+    termsAcceptedAt: account.termsAcceptedAt,
+    billingMandate: existing.billingMandate || "Not active",
+    revenueSharePercent: account.revenueSharePercent || 10,
+    linkedPlatforms: Array.isArray(existing.linkedPlatforms) ? existing.linkedPlatforms : [],
+    uploads: Number(existing.uploads || 0),
+    grossRevenue: Number(existing.grossRevenue || 0),
+    podforgeFee: Number(existing.podforgeFee || 0),
+    risk: existing.risk || "Low",
+    adminNote: existing.adminNote || "Created from public account signup.",
+  };
+}
+
+function accountBackedAdminUsers(store) {
+  const accounts = readAccounts().users;
+  const accountIds = new Set(accounts.map((account) => account.id));
+  const fromAccounts = accounts.map((account) => adminUserFromAccount(account, store.users.find((user) => user.id === account.id)));
+  const manualUsers = store.users.filter((user) => !accountIds.has(user.id));
+  return [...fromAccounts, ...manualUsers];
+}
+
 function requestActor(request) {
   return adminLoginRequired ? "Authenticated admin" : "Testing admin";
 }
@@ -255,7 +390,7 @@ function buildAdminAnalytics() {
   const uploads = [...store.uploads].sort((left, right) => new Date(right.uploadedAt) - new Date(left.uploadedAt));
   const collections = [...store.collections].sort((left, right) => new Date(left.dueDate) - new Date(right.dueDate));
   const platforms = store.platforms;
-  const users = [...store.users].sort((left, right) => new Date(right.lastActiveAt || 0) - new Date(left.lastActiveAt || 0));
+  const users = accountBackedAdminUsers(store).sort((left, right) => new Date(right.lastActiveAt || 0) - new Date(left.lastActiveAt || 0));
   const totalPlatformRevenue = moneySum(platforms, "grossRevenue");
   const totalPlatformFee = moneySum(platforms, "podforgeFee");
   const collected = moneySum(collections, "fee", ["Collected"]);
@@ -327,7 +462,14 @@ function allowedValue(value, allowed, fallback) {
 
 function updateAdminUserStatus(userId, payload, request) {
   const store = readAdminStore();
-  const user = store.users.find((item) => item.id === userId);
+  let user = store.users.find((item) => item.id === userId);
+  if (!user) {
+    const account = readAccounts().users.find((item) => item.id === userId);
+    if (account) {
+      user = adminUserFromAccount(account);
+      store.users.push(user);
+    }
+  }
   if (!user) {
     const error = new Error("User not found.");
     error.statusCode = 404;
@@ -709,6 +851,112 @@ function verifyStripeWebhookSignature(rawBody, signatureHeader) {
 }
 
 async function handleApi(request, response, url) {
+  if (request.method === "GET" && url.pathname === "/api/account/me") {
+    const account = accountFromRequest(request);
+    if (!account) {
+      sendJson(response, 401, { error: "Create or sign in to your account first.", authRequired: true });
+      return true;
+    }
+
+    sendJson(response, 200, { account: publicAccount(account) });
+    return true;
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/account/signup") {
+    const payload = await readJson(request);
+    const error = validateAccountPayload(payload);
+    if (error) {
+      sendJson(response, 400, { error });
+      return true;
+    }
+
+    const store = readAccounts();
+    if (findAccountByEmail(store, payload.email)) {
+      sendJson(response, 409, { error: "An account already exists for that email. Sign in instead." });
+      return true;
+    }
+
+    const now = new Date().toISOString();
+    const password = hashPassword(payload.password);
+    const account = {
+      id: crypto.randomUUID(),
+      fullName: String(payload.fullName || "").trim(),
+      phone: String(payload.phone || "").trim(),
+      email: String(payload.email || "").trim(),
+      emailKey: normalizeEmail(payload.email),
+      passwordSalt: password.salt,
+      passwordHash: password.hash,
+      termsAccepted: true,
+      termsAcceptedAt: now,
+      revenueSharePercent: 10,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    store.users.push(account);
+    writeAccounts(store);
+    createUserSession(response, account);
+    sendJson(response, 201, { account: publicAccount(account) });
+    return true;
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/account/login") {
+    const payload = await readJson(request);
+    const store = readAccounts();
+    const account = findAccountByEmail(store, payload.email);
+    if (!account || !verifyPassword(account, payload.password)) {
+      sendJson(response, 401, { error: "Email or password is incorrect." });
+      return true;
+    }
+
+    account.updatedAt = new Date().toISOString();
+    writeAccounts(store);
+    createUserSession(response, account);
+    sendJson(response, 200, { account: publicAccount(account) });
+    return true;
+  }
+
+  if (request.method === "PATCH" && url.pathname === "/api/account/me") {
+    const current = requireUser(request);
+    const payload = await readJson(request);
+    const error = validateAccountPayload({ ...payload, password: "", verifyPassword: "", termsAccepted: true }, { requirePassword: false });
+    if (error) {
+      sendJson(response, 400, { error });
+      return true;
+    }
+
+    const store = readAccounts();
+    const account = store.users.find((item) => item.id === current.id);
+    if (!account) {
+      sendJson(response, 404, { error: "Account not found." });
+      return true;
+    }
+
+    const emailKey = normalizeEmail(payload.email);
+    const emailOwner = store.users.find((item) => item.id !== account.id && (item.emailKey === emailKey || normalizeEmail(item.email) === emailKey));
+    if (emailOwner) {
+      sendJson(response, 409, { error: "Another account already uses that email." });
+      return true;
+    }
+
+    account.fullName = String(payload.fullName || "").trim();
+    account.phone = String(payload.phone || "").trim();
+    account.email = String(payload.email || "").trim();
+    account.emailKey = emailKey;
+    account.updatedAt = new Date().toISOString();
+    writeAccounts(store);
+    sendJson(response, 200, { account: publicAccount(account) });
+    return true;
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/account/logout") {
+    const token = parseCookies(request).podforge_user;
+    if (token) userSessions.delete(token);
+    clearCookie(response, "podforge_user");
+    sendJson(response, 200, { ok: true });
+    return true;
+  }
+
   if (request.method === "POST" && url.pathname === "/api/admin/login") {
     if (!adminLoginRequired) {
       sendJson(response, 200, { ok: true, adminPath, loginRequired: false });
@@ -809,10 +1057,11 @@ async function handleApi(request, response, url) {
   }
 
   if (request.method === "POST" && url.pathname === "/api/feedback") {
-    const feedback = normalizeFeedback(await readJson(request), request);
+    const account = requireUser(request);
+    const feedback = normalizeFeedback(await readJson(request), request, account);
     const items = [feedback, ...readFeedbackItems()].slice(0, 500);
     writeFeedbackItems(items);
-    sendJson(response, 201, { feedback, items });
+    sendJson(response, 201, { feedback, items: items.filter((item) => item.accountId === account.id) });
     return true;
   }
 
@@ -828,18 +1077,21 @@ async function handleApi(request, response, url) {
   }
 
   if (request.method === "POST" && url.pathname === "/api/revenue/setup-mandate") {
+    const account = requireUser(request);
     const payload = await readJson(request);
-    sendJson(response, 200, await createMandateSetup(payload));
+    sendJson(response, 200, await createMandateSetup({ ...payload, creatorId: account.id, fullName: account.fullName, email: account.email }));
     return true;
   }
 
   if (request.method === "POST" && url.pathname === "/api/revenue/collect-fee") {
+    const account = requireUser(request);
     const payload = await readJson(request);
-    sendJson(response, 200, await collectPlatformFee(payload));
+    sendJson(response, 200, await collectPlatformFee({ ...payload, creatorId: account.id, fullName: account.fullName, email: account.email }));
     return true;
   }
 
   if (request.method === "POST" && url.pathname === "/api/revenue/platform-sync") {
+    requireUser(request);
     const payload = await readJson(request);
     sendJson(response, 200, {
       mode: "unavailable",
@@ -932,6 +1184,7 @@ const server = http.createServer(async (request, response) => {
   } catch (error) {
     sendJson(response, error.statusCode || 500, {
       error: error.message || "Server error",
+      authRequired: Boolean(error.authRequired),
       details: error.details || undefined,
     });
   }

@@ -4,9 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PodForge Studio</title>
-    <link rel="stylesheet" href="styles.css?v=real-feedback-1" />
+    <link rel="stylesheet" href="styles.css?v=account-isolation-1" />
   </head>
-  <body>
+  <body class="auth-locked">
     <section class="auth-screen" id="authScreen" aria-labelledby="auth-title">
       <div class="auth-card">
         <div class="brand auth-brand">
@@ -20,6 +20,11 @@
           <p class="eyebrow">Account required</p>
           <h1 id="auth-title">Create your creator account.</h1>
           <p>Sign up to record, edit, publish, and manage podcast revenue inside PodForge.</p>
+        </div>
+
+        <div class="auth-mode-tabs" role="tablist" aria-label="Account access">
+          <button class="active" type="button" id="showSignupButton">Create account</button>
+          <button type="button" id="showLoginButton">Sign in</button>
         </div>
 
         <form class="auth-form" id="signupForm">
@@ -60,6 +65,19 @@
 
           <p class="form-error" id="signupError" role="alert"></p>
           <button class="primary-button" type="submit">Create Account</button>
+        </form>
+
+        <form class="auth-form" id="loginForm" hidden>
+          <label>
+            Email
+            <input id="loginEmail" type="email" autocomplete="email" />
+          </label>
+          <label>
+            Password
+            <input id="loginPassword" type="password" autocomplete="current-password" />
+          </label>
+          <p class="form-error" id="loginError" role="alert"></p>
+          <button class="primary-button" type="submit">Sign In</button>
         </form>
       </div>
     </section>
@@ -769,11 +787,11 @@
               <div class="account-actions">
                 <button class="primary-button" type="submit">Save Account</button>
                 <button class="ghost-button" type="button" id="signOutButton">Sign Out</button>
-                <button class="secondary-button" type="button" id="resetAccountButton">Reset Prototype Account</button>
+                <button class="secondary-button" type="button" id="resetAccountButton">Clear Local Workspace</button>
               </div>
             </form>
             <div class="auth-upgrade">
-              <article><strong>Login</strong><span>Ready for backend auth</span></article>
+              <article><strong>Login</strong><span>Server account session active</span></article>
               <article><strong>Password reset</strong><span>Flow mapped for launch</span></article>
               <article><strong>Terms versioning</strong><span>10% revenue-share acceptance tracked</span></article>
               <article><strong>Revenue collection</strong><span>Billing mandate and ledger mapped</span></article>
@@ -952,6 +970,6 @@
     </section>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="app.js?v=real-feedback-1"></script>
+    <script src="app.js?v=account-isolation-1"></script>
   </body>
 </html>

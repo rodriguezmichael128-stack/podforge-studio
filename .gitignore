@@ -1,5 +1,4 @@
 .env
 node_modules/
 *.log
-data/feedback.json
-data/admin-store.json
+data/*.json

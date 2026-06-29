@@ -1,4 +1,5 @@
 const state = {
+  account: null,
   mode: "video",
   stream: null,
   recorder: null,
@@ -38,7 +39,7 @@ const toast = $("#toast");
 const audioMeter = $("#audioMeter");
 const meterContext = audioMeter.getContext("2d");
 const reviewScore = $("#reviewScore");
-const accountStorageKey = "podforgeAccount";
+const legacyAccountStorageKey = "podforgeAccount";
 const feedbackStorageKey = "podforgeFeedback";
 const episodeStorageKey = "podforgeEpisodes";
 const revenueStorageKey = "podforgeRevenue";
@@ -211,11 +212,19 @@ function showToast(message) {
   showToast.timer = window.setTimeout(() => toast.classList.remove("show"), 2800);
 }
 
+function accountStorageKey(baseKey) {
+  return `${baseKey}:${state.account?.id || "locked"}`;
+}
+
+function clearLegacyAccountState() {
+  localStorage.removeItem(legacyAccountStorageKey);
+}
+
 function getStoredFeedback() {
   if (state.feedbackLoaded) return state.feedback;
 
   try {
-    return JSON.parse(localStorage.getItem(feedbackStorageKey)) || [];
+    return JSON.parse(localStorage.getItem(accountStorageKey(feedbackStorageKey))) || [];
   } catch (error) {
     return [];
   }
@@ -224,12 +233,12 @@ function getStoredFeedback() {
 function saveStoredFeedback(items) {
   state.feedback = Array.isArray(items) ? items : [];
   state.feedbackLoaded = true;
-  localStorage.setItem(feedbackStorageKey, JSON.stringify(items));
+  localStorage.setItem(accountStorageKey(feedbackStorageKey), JSON.stringify(items));
 }
 
 function getStoredEpisodes() {
   try {
-    const episodes = JSON.parse(localStorage.getItem(episodeStorageKey));
+    const episodes = JSON.parse(localStorage.getItem(accountStorageKey(episodeStorageKey)));
     return Array.isArray(episodes) ? episodes.filter((episode) => !seededEpisodeIds.has(episode.id)) : defaultEpisodes;
   } catch (error) {
     return defaultEpisodes;
@@ -237,7 +246,7 @@ function getStoredEpisodes() {
 }
 
 function saveStoredEpisodes() {
-  localStorage.setItem(episodeStorageKey, JSON.stringify(state.episodes));
+  localStorage.setItem(accountStorageKey(episodeStorageKey), JSON.stringify(state.episodes));
 }
 
 function stageToStatus(stage) {
@@ -417,7 +426,7 @@ function cloneDefaultRevenueState() {
 function getStoredRevenue() {
   const fallback = cloneDefaultRevenueState();
   try {
-    const stored = JSON.parse(localStorage.getItem(revenueStorageKey));
+    const stored = JSON.parse(localStorage.getItem(accountStorageKey(revenueStorageKey)));
     if (!stored || !Array.isArray(stored.sources) || !Array.isArray(stored.ledger)) return fallback;
 
     return {
@@ -441,11 +450,12 @@ function getStoredRevenue() {
 }
 
 function saveRevenueState() {
-  localStorage.setItem(revenueStorageKey, JSON.stringify(state.revenue));
+  localStorage.setItem(accountStorageKey(revenueStorageKey), JSON.stringify(state.revenue));
 }
 
 async function apiJson(path, options = {}) {
   const response = await fetch(path, {
+    credentials: "same-origin",
     headers: {
       "Content-Type": "application/json",
       ...(options.headers || {}),
@@ -453,6 +463,9 @@ async function apiJson(path, options = {}) {
     ...options,
   });
   const payload = await response.json().catch(() => ({}));
+  if (response.status === 401 && payload.authRequired) {
+    lockApp();
+  }
   if (!response.ok) throw new Error(payload.error || "Revenue service request failed.");
   return payload;
 }
@@ -946,24 +959,8 @@ function handleEpisodeSubmit(event) {
   showToast("Episode created and added to Pipeline.");
 }
 
-async function hashPassword(password) {
-  const encoded = new TextEncoder().encode(password);
-  const digest = await crypto.subtle.digest("SHA-256", encoded);
-  return Array.from(new Uint8Array(digest))
-    .map((byte) => byte.toString(16).padStart(2, "0"))
-    .join("");
-}
-
 function getStoredAccount() {
-  try {
-    return JSON.parse(localStorage.getItem(accountStorageKey));
-  } catch (error) {
-    return null;
-  }
-}
-
-function saveStoredAccount(account) {
-  localStorage.setItem(accountStorageKey, JSON.stringify(account));
+  return state.account;
 }
 
 function initialsFromName(name) {
@@ -998,16 +995,54 @@ function populateAccount(account) {
   })}`;
 }
 
+function switchAuthMode(mode) {
+  const signupMode = mode !== "login";
+  $("#signupForm").hidden = !signupMode;
+  $("#loginForm").hidden = signupMode;
+  $("#showSignupButton").classList.toggle("active", signupMode);
+  $("#showLoginButton").classList.toggle("active", !signupMode);
+  $("#auth-title").textContent = signupMode ? "Create your creator account." : "Sign in to your creator account.";
+  $("#signupError").textContent = "";
+  $("#loginError").textContent = "";
+}
+
+function loadAccountWorkspace(account) {
+  state.account = account;
+  clearLegacyAccountState();
+  state.feedback = [];
+  state.feedbackLoaded = false;
+  state.episodes = getStoredEpisodes();
+  state.selectedEpisodeId = state.episodes[0]?.id || "";
+  state.revenue = getStoredRevenue();
+  renderEpisodes();
+  syncEpisodeToWorkspace(selectedEpisode());
+  updateWorkflow(selectedEpisode()?.stage || "Idea", false);
+  renderFeedbackSummary();
+  renderRevenueCollection();
+  loadRevenueBackendConfig();
+}
+
 function unlockApp(account) {
+  loadAccountWorkspace(account);
   document.body.classList.remove("auth-locked");
   populateAccount(account);
   routeToPage();
 }
 
-function requireAccount() {
-  const account = getStoredAccount();
-  if (account?.termsAccepted) {
-    unlockApp(account);
+function lockApp() {
+  state.account = null;
+  document.body.classList.add("auth-locked");
+  $("#sidebarAccountName").textContent = "Creator";
+  $("#sidebarAccountEmail").textContent = "Account required";
+  $("#accountAvatar").textContent = "PF";
+}
+
+async function requireAccount() {
+  try {
+    const payload = await apiJson("/api/account/me");
+    unlockApp(payload.account);
+  } catch (error) {
+    lockApp();
   }
 }
 
@@ -1029,25 +1064,48 @@ async function handleSignup(event) {
     return;
   }
 
-  const account = {
-    id: crypto.randomUUID(),
-    fullName: values.fullName,
-    phone: values.phone,
-    email: values.email,
-    passwordHash: await hashPassword(values.password),
-    termsAccepted: true,
-    termsAcceptedAt: new Date().toISOString(),
-    revenueSharePercent: 10,
-  };
-
-  saveStoredAccount(account);
-  signupError.textContent = "";
-  $("#signupForm").reset();
-  unlockApp(account);
-  showToast("Account created. Welcome to PodForge.");
+  try {
+    const payload = await apiJson("/api/account/signup", {
+      method: "POST",
+      body: JSON.stringify(values),
+    });
+    signupError.textContent = "";
+    $("#signupForm").reset();
+    unlockApp(payload.account);
+    showToast("Account created. Welcome to PodForge.");
+  } catch (error) {
+    signupError.textContent = error.message;
+  }
 }
 
-function handleAccountSave(event) {
+async function handleLogin(event) {
+  event.preventDefault();
+  const loginError = $("#loginError");
+  const values = {
+    email: $("#loginEmail").value.trim(),
+    password: $("#loginPassword").value,
+  };
+
+  if (!values.email || !values.password) {
+    loginError.textContent = "Enter your email and password.";
+    return;
+  }
+
+  try {
+    const payload = await apiJson("/api/account/login", {
+      method: "POST",
+      body: JSON.stringify(values),
+    });
+    loginError.textContent = "";
+    $("#loginForm").reset();
+    unlockApp(payload.account);
+    showToast("Signed in to your PodForge account.");
+  } catch (error) {
+    loginError.textContent = error.message;
+  }
+}
+
+async function handleAccountSave(event) {
   event.preventDefault();
   const current = getStoredAccount();
   if (!current) return;
@@ -1067,26 +1125,37 @@ function handleAccountSave(event) {
     return;
   }
 
-  const updated = {
-    ...current,
-    fullName: values.fullName,
-    phone: values.phone,
-    email: values.email,
-  };
-  saveStoredAccount(updated);
-  populateAccount(updated);
-  showToast("Account updated.");
+  try {
+    const payload = await apiJson("/api/account/me", {
+      method: "PATCH",
+      body: JSON.stringify(values),
+    });
+    state.account = payload.account;
+    populateAccount(payload.account);
+    showToast("Account updated.");
+  } catch (saveError) {
+    showToast(saveError.message);
+  }
 }
 
-function signOut() {
-  document.body.classList.add("auth-locked");
-  showToast("Signed out of this prototype.");
+async function signOut() {
+  try {
+    await apiJson("/api/account/logout", { method: "POST" });
+  } catch (error) {
+    // The local app should still lock if the network request fails.
+  }
+  lockApp();
+  switchAuthMode("login");
+  showToast("Signed out.");
 }
 
 function resetPrototypeAccount() {
-  localStorage.removeItem(accountStorageKey);
-  document.body.classList.add("auth-locked");
-  $("#signupForm").reset();
+  if (!state.account) return;
+  localStorage.removeItem(accountStorageKey(episodeStorageKey));
+  localStorage.removeItem(accountStorageKey(revenueStorageKey));
+  localStorage.removeItem(accountStorageKey(feedbackStorageKey));
+  loadAccountWorkspace(state.account);
+  showToast("This account's local workspace was cleared.");
 }
 
 function pageList(element) {
@@ -1778,7 +1847,10 @@ $("#mandateCheck").addEventListener("change", updateRevenueMandate);
 $("#billingMethodSelect").addEventListener("change", updateRevenueMandate);
 $("#copyReviewLinkButton").addEventListener("click", copyReviewLink);
 $("#exportBackendPlanButton").addEventListener("click", exportBackendPlan);
+$("#showSignupButton").addEventListener("click", () => switchAuthMode("signup"));
+$("#showLoginButton").addEventListener("click", () => switchAuthMode("login"));
 $("#signupForm").addEventListener("submit", handleSignup);
+$("#loginForm").addEventListener("submit", handleLogin);
 $("#accountForm").addEventListener("submit", handleAccountSave);
 $("#signOutButton").addEventListener("click", signOut);
 $("#resetAccountButton").addEventListener("click", resetPrototypeAccount);
@@ -1830,19 +1902,10 @@ importInput.addEventListener("change", (event) => {
   event.target.value = "";
 });
 
-state.episodes = getStoredEpisodes();
-state.selectedEpisodeId = state.episodes[0]?.id || "";
-state.revenue = getStoredRevenue();
-renderEpisodes();
-syncEpisodeToWorkspace(selectedEpisode());
-updateWorkflow(selectedEpisode()?.stage || "Idea", false);
 renderAssets();
 updateReviewScore();
 renderAudienceHeatmap();
-renderFeedbackSummary();
-loadSharedFeedback();
 renderEditResults(false);
-renderRevenueCollection();
-loadRevenueBackendConfig();
+switchAuthMode("signup");
 requireAccount();
 routeToPage();
