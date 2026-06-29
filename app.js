@@ -62,44 +62,9 @@ const stageDeadlines = {
   Analyze: "Check the first 48 hours",
 };
 
-const defaultEpisodes = [
-  {
-    id: "creator-economy",
-    title: "The New Creator Economy",
-    status: "Recording today",
-    format: "Interview",
-    type: "video",
-    audience: "indie creators and podcasters",
-    goal: "Interview format with two short vertical clips and an audio-only master.",
-    guest: "Ari Rivera",
-    target: "Everywhere package",
-    stage: "Record",
-  },
-  {
-    id: "indie-sponsors",
-    title: "How Indie Shows Get Sponsors",
-    status: "Script draft",
-    format: "Solo commentary",
-    type: "audio",
-    audience: "indie hosts looking for sponsors",
-    goal: "Solo breakdown with sponsor-read blocks, examples, and monetization checklist.",
-    guest: "",
-    target: "Spotify first",
-    stage: "Script",
-  },
-  {
-    id: "audience-qa",
-    title: "Audience Q&A: Better Episodes",
-    status: "Review",
-    format: "Roundtable",
-    type: "video",
-    audience: "existing listeners",
-    goal: "Roundtable edit waiting on captions, thumbnail, and publish approval.",
-    guest: "Kai Morgan",
-    target: "YouTube first",
-    stage: "Review",
-  },
-];
+const seededEpisodeIds = new Set(["creator-economy", "indie-sponsors", "audience-qa"]);
+const seededRevenueRowIds = new Set(["yt-apr-2026", "sp-apr-2026", "pf-apr-2026", "tt-may-2026"]);
+const defaultEpisodes = [];
 
 const defaultRevenueState = {
   mandateActive: false,
@@ -109,170 +74,61 @@ const defaultRevenueState = {
       id: "youtube",
       code: "YT",
       name: "YouTube",
-      connected: true,
-      dataAccess: "Analytics revenue metrics",
+      connected: false,
+      dataAccess: "Connect a real account or import a real statement.",
       payoutControl: "Creator AdSense payout",
-      collection: "PodForge billing mandate",
-      sync: "Estimated revenue synced",
+      collection: "Not authorized",
+      sync: "No live revenue data",
     },
     {
       id: "spotify",
       code: "SP",
       name: "Spotify",
-      connected: true,
-      dataAccess: "Creator statement import",
+      connected: false,
+      dataAccess: "Import a real creator statement.",
       payoutControl: "Creator Spotify Payouts",
-      collection: "PodForge billing mandate",
-      sync: "Monthly report pending",
+      collection: "Not authorized",
+      sync: "No live revenue data",
     },
     {
       id: "apple",
       code: "AP",
       name: "Apple Podcasts",
       connected: false,
-      dataAccess: "Financial report import",
+      dataAccess: "Import a real financial report.",
       payoutControl: "Creator Apple payout",
-      collection: "PodForge billing mandate",
-      sync: "Needs connection",
+      collection: "Not authorized",
+      sync: "No live revenue data",
     },
     {
       id: "tiktok",
       code: "TT",
       name: "TikTok",
       connected: false,
-      dataAccess: "Dashboard or report import",
+      dataAccess: "Import a real platform report.",
       payoutControl: "Creator TikTok payout",
-      collection: "PodForge billing mandate",
-      sync: "Needs connection",
+      collection: "Not authorized",
+      sync: "No live revenue data",
     },
     {
       id: "patreon",
       code: "PA",
       name: "Patreon",
       connected: false,
-      dataAccess: "API and payout report",
+      dataAccess: "Import a real payout report.",
       payoutControl: "Creator Patreon payout",
-      collection: "PodForge billing mandate",
-      sync: "Needs connection",
-    },
-    {
-      id: "podforge",
-      code: "PF",
-      name: "PodForge Sponsorships",
-      connected: true,
-      dataAccess: "Native transaction ledger",
-      payoutControl: "PodForge-controlled payout",
-      collection: "Deducted at source",
-      sync: "Fee collected automatically",
+      collection: "Not authorized",
+      sync: "No live revenue data",
     },
   ],
-  ledger: [
-    {
-      id: "yt-apr-2026",
-      platform: "YouTube",
-      period: "Apr 2026",
-      gross: 1850,
-      fee: 185,
-      creator: 1665,
-      source: "API estimate",
-      status: "Scheduled",
-    },
-    {
-      id: "sp-apr-2026",
-      platform: "Spotify",
-      period: "Apr 2026",
-      gross: 920,
-      fee: 92,
-      creator: 828,
-      source: "Statement import",
-      status: "Awaiting final",
-    },
-    {
-      id: "pf-apr-2026",
-      platform: "PodForge Sponsorships",
-      period: "Apr 2026",
-      gross: 650,
-      fee: 65,
-      creator: 585,
-      source: "Native payment",
-      status: "Collected",
-    },
-  ],
+  ledger: [],
 };
 
 const audienceHeatmapData = {
-  peak: "Thu 7 PM",
-  cells: [
-    {
-      day: "Mon",
-      values: [
-        { score: 34, platform: "Spotify" },
-        { score: 48, platform: "YouTube" },
-        { score: 61, platform: "YouTube" },
-        { score: 42, platform: "TikTok" },
-      ],
-    },
-    {
-      day: "Tue",
-      values: [
-        { score: 41, platform: "Spotify" },
-        { score: 57, platform: "Spotify" },
-        { score: 69, platform: "YouTube" },
-        { score: 50, platform: "TikTok" },
-      ],
-    },
-    {
-      day: "Wed",
-      values: [
-        { score: 46, platform: "Spotify" },
-        { score: 62, platform: "YouTube" },
-        { score: 74, platform: "YouTube" },
-        { score: 56, platform: "TikTok" },
-      ],
-    },
-    {
-      day: "Thu",
-      values: [
-        { score: 52, platform: "Spotify" },
-        { score: 71, platform: "YouTube" },
-        { score: 92, platform: "YouTube" },
-        { score: 67, platform: "Patreon" },
-      ],
-    },
-    {
-      day: "Fri",
-      values: [
-        { score: 49, platform: "Spotify" },
-        { score: 64, platform: "YouTube" },
-        { score: 84, platform: "TikTok" },
-        { score: 73, platform: "TikTok" },
-      ],
-    },
-    {
-      day: "Sat",
-      values: [
-        { score: 38, platform: "Spotify" },
-        { score: 58, platform: "YouTube" },
-        { score: 79, platform: "TikTok" },
-        { score: 88, platform: "TikTok" },
-      ],
-    },
-    {
-      day: "Sun",
-      values: [
-        { score: 44, platform: "Spotify" },
-        { score: 63, platform: "Patreon" },
-        { score: 81, platform: "Patreon" },
-        { score: 70, platform: "Spotify" },
-      ],
-    },
-  ],
-  slots: ["Morning", "Midday", "Evening", "Late"],
-  insights: [
-    ["Best release window", "YouTube Thu 6-9 PM"],
-    ["Strongest audio slot", "Spotify Tue morning"],
-    ["Clip opportunity", "TikTok Sat late posts"],
-  ],
+  peak: "",
+  cells: [],
+  slots: [],
+  insights: [],
 };
 
 const pageCopy = {
@@ -374,7 +230,7 @@ function saveStoredFeedback(items) {
 function getStoredEpisodes() {
   try {
     const episodes = JSON.parse(localStorage.getItem(episodeStorageKey));
-    return Array.isArray(episodes) && episodes.length ? episodes : defaultEpisodes;
+    return Array.isArray(episodes) ? episodes.filter((episode) => !seededEpisodeIds.has(episode.id)) : defaultEpisodes;
   } catch (error) {
     return defaultEpisodes;
   }
@@ -566,12 +422,18 @@ function getStoredRevenue() {
 
     return {
       ...fallback,
-      ...stored,
+      billingMethod: stored.billingMethod || fallback.billingMethod,
+      mandateActive: false,
+      stripeCustomerId: "",
+      stripeSessionId: "",
+      lastCollectionInvoiceId: "",
+      lastCollectionMessage: "",
       sources: fallback.sources.map((source) => ({
         ...source,
-        ...(stored.sources.find((item) => item.id === source.id) || {}),
+        connected: false,
+        connectionVerifiedAt: "",
       })),
-      ledger: stored.ledger.length ? stored.ledger : fallback.ledger,
+      ledger: stored.ledger.filter((row) => !seededRevenueRowIds.has(row.id)),
     };
   } catch (error) {
     return fallback;
@@ -598,12 +460,12 @@ async function apiJson(path, options = {}) {
 function creatorPayload() {
   const account = getStoredAccount() || {};
   return {
-    creatorId: account.id || account.email || "prototype-creator",
-    fullName: account.fullName || "Prototype Creator",
-    email: account.email || "creator@podforge.test",
-    billingMethod: state.revenue.billingMethod,
+    creatorId: account.id || account.email || "",
+    fullName: account.fullName || "",
+    email: account.email || "",
+    billingMethod: state.revenue?.billingMethod || "ACH debit",
     revenueSharePercent: 10,
-    stripeCustomerId: state.revenue.stripeCustomerId || "",
+    stripeCustomerId: state.revenue?.stripeCustomerId || "",
   };
 }
 
@@ -611,13 +473,13 @@ function renderRevenueIntegrationStatus() {
   const status = $("#revenueIntegrationStatus");
   if (!status || !state.revenue) return;
   const integration = state.revenue.integration || {};
-  const modeLabel = integration.mode ? integration.mode.toUpperCase() : "SIMULATION";
+  const modeLabel = integration.mode ? integration.mode.toUpperCase() : "OFFLINE";
   const stripeClass = integration.stripeConfigured ? "ready" : "warn";
   const webhookClass = integration.webhookConfigured ? "ready" : "warn";
   const liveClass = integration.liveChargesEnabled ? "warn" : "ready";
 
   status.innerHTML = `
-    <span class="${stripeClass}">Stripe ${integration.stripeConfigured ? "configured" : "simulation"}</span>
+    <span class="${stripeClass}">Stripe ${integration.stripeConfigured ? "configured" : "not connected"}</span>
     <span class="${webhookClass}">Webhook ${integration.webhookConfigured ? "ready" : "not set"}</span>
     <span class="${liveClass}">${modeLabel} mode</span>
     <span>Server collection route active</span>
@@ -664,13 +526,13 @@ function renderRevenueCollection() {
   $("#collectionStatusMetric").textContent = state.revenue.mandateActive ? "Auto-collect active" : "Mandate needed";
   $("#collectionStatusHelp").textContent = state.revenue.mandateActive
     ? `${state.revenue.billingMethod} will be charged after each statement closes.`
-    : "Connected platforms report revenue; the billing mandate collects the fee.";
+    : "Import real statements before tracking revenue or collecting fees.";
   $("#mandateStatusPill").textContent = state.revenue.mandateActive ? "Active" : "Not active";
   $("#mandateStatusPill").classList.toggle("ready", state.revenue.mandateActive);
   $("#mandateCheck").checked = state.revenue.mandateActive;
   $("#billingMethodSelect").value = state.revenue.billingMethod;
   $("#stripeSetupStatus").textContent = state.revenue.stripeSessionId
-    ? `Mandate setup ${state.revenue.integration?.mode || "simulation"} session: ${state.revenue.stripeSessionId}`
+    ? `Mandate setup ${state.revenue.integration?.mode || "test"} session: ${state.revenue.stripeSessionId}`
     : "Stripe setup has not been started.";
   renderRevenueIntegrationStatus();
 
@@ -710,6 +572,11 @@ function renderRevenueLedger() {
   const ledger = $("#ledgerTable");
   if (!ledger || !state.revenue) return;
 
+  if (!state.revenue.ledger.length) {
+    ledger.innerHTML = '<div class="empty-state">No real revenue statements have been imported yet.</div>';
+    return;
+  }
+
   ledger.innerHTML = `
     <div class="ledger-row ledger-head">
       <span>Platform</span>
@@ -740,11 +607,7 @@ function connectRevenueSource(id) {
   const source = state.revenue.sources.find((item) => item.id === id);
   if (!source) return;
 
-  source.connected = true;
-  source.sync = source.id === "podforge" ? "Fee collected automatically" : "Ready for next pay period";
-  saveRevenueState();
-  renderRevenueCollection();
-  showToast(`${source.name} revenue source ${source.id === "podforge" ? "synced" : "connected"}.`);
+  showToast(`${source.name} needs a real OAuth connection or statement import before it can be marked connected.`);
 }
 
 async function activateRevenueCollection() {
@@ -758,6 +621,14 @@ async function activateRevenueCollection() {
       method: "POST",
       body: JSON.stringify(creatorPayload()),
     });
+
+    if (setup.mode === "unavailable") {
+      state.revenue.lastCollectionMessage = setup.message;
+      saveRevenueState();
+      renderRevenueCollection();
+      showToast("Stripe is not connected, so no billing mandate was activated.");
+      return;
+    }
 
     state.revenue.mandateActive = true;
     state.revenue.billingMethod = $("#billingMethodSelect").value;
@@ -816,13 +687,19 @@ async function collectDueFees() {
       }),
     });
 
+    if (collection.mode === "unavailable") {
+      showToast(collection.message || "Stripe is not connected, so no fee was collected.");
+      renderRevenueCollection();
+      return;
+    }
+
     state.revenue.lastCollectionInvoiceId = collection.invoiceId;
     state.revenue.lastCollectionMessage = collection.message;
     state.revenue.ledger = state.revenue.ledger.map((row) =>
       dueRows.some((dueRow) => dueRow.id === row.id)
         ? {
             ...row,
-            status: collection.mode === "simulation" ? "Simulated collected" : "Collection started",
+            status: collection.mode === "unavailable" ? "Not collected" : "Collection started",
             invoiceId: collection.invoiceId,
           }
         : row,
@@ -837,38 +714,15 @@ async function collectDueFees() {
 
 async function importRevenueReport() {
   try {
-    await apiJson("/api/revenue/platform-sync", {
+    const result = await apiJson("/api/revenue/platform-sync", {
       method: "POST",
-      body: JSON.stringify({ platform: "TikTok", source: "manual report import" }),
+      body: JSON.stringify({ source: "manual report import" }),
     });
+    showToast(result.message || "Revenue import is not connected yet.");
   } catch (error) {
     showToast(error.message);
-    return;
   }
-
-  const existing = state.revenue.ledger.some((row) => row.id === "tt-may-2026");
-  if (!existing) {
-    state.revenue.ledger.unshift({
-      id: "tt-may-2026",
-      platform: "TikTok",
-      period: "May 2026",
-      gross: 480,
-      fee: 48,
-      creator: 432,
-      source: "Report import",
-      status: state.revenue.mandateActive ? "Auto-collect scheduled" : "Mandate needed",
-    });
-  }
-
-  const tiktok = state.revenue.sources.find((source) => source.id === "tiktok");
-  if (tiktok) {
-    tiktok.connected = true;
-    tiktok.sync = "Report imported";
-  }
-
-  saveRevenueState();
   renderRevenueCollection();
-  showToast(existing ? "Latest revenue report already imported." : "Revenue report imported.");
 }
 
 async function handleFeedbackSubmit(event) {
@@ -913,7 +767,16 @@ async function handleFeedbackSubmit(event) {
 }
 
 function syncEpisodeToWorkspace(episode) {
-  if (!episode) return;
+  if (!episode) {
+    $("#episodeTitle").value = "";
+    $("#audienceInput").value = "";
+    $("#episodeAngle").value = "";
+    $(".cover-preview strong").textContent = "Episode title";
+    $("#reviewEpisodeTitle").textContent = "No episode selected";
+    $("#reviewLink").textContent = "Create an episode to generate a review link";
+    packageSummary.textContent = "No finished episode yet";
+    return;
+  }
   $("#episodeTitle").value = episode.title;
   $("#audienceInput").value = episode.audience;
   $("#episodeAngle").value = episode.goal;
@@ -922,7 +785,7 @@ function syncEpisodeToWorkspace(episode) {
   $$(".mode-button").forEach((item) => item.classList.toggle("active", item.dataset.mode === episode.type));
   $(".cover-preview strong").textContent = episode.title;
   $("#reviewEpisodeTitle").textContent = episode.title;
-  $("#reviewLink").textContent = `podforge.review/${episode.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}`;
+  $("#reviewLink").textContent = `${window.location.origin}/review/${episode.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}`;
   packageSummary.textContent = `${episode.title}: ready for production setup`;
 }
 
@@ -951,9 +814,10 @@ function renderEpisodes() {
   const episodes = visibleEpisodes();
 
   if (!episodes.length) {
+    const hasFilters = state.pipelineSearch.trim() || state.pipelineStageFilter !== "All";
     episodeGrid.innerHTML = `
       <div class="empty-state pipeline-empty">
-        No episodes match the current pipeline view.
+        ${hasFilters ? "No episodes match the current pipeline view." : "No episodes yet. Create one to start collecting real workflow feedback."}
       </div>
     `;
     renderStudioMetrics();
@@ -1606,10 +1470,10 @@ function renderEditResults(ready = false) {
   const title = $("#episodeTitle").value || "Untitled Episode";
   const outputs = [
     ["Full Episode", ready ? "Ready" : "Not generated", `${state.mode === "audio" ? "Audio" : "Landscape video"} master for ${title}.`],
-    ["Vertical Clips", ready ? "3 clips ready" : "Not generated", "TikTok/Reels/Shorts exports with captions."],
+    ["Vertical Clips", ready ? "Generated" : "Not generated", "TikTok/Reels/Shorts exports with captions."],
     ["Captions", ready ? "SRT ready" : "Not generated", "Caption track plus burned-in social captions."],
     ["Thumbnail", ready ? "Draft ready" : "Not generated", "Brand kit image for video platforms."],
-    ["Chapters", ready ? "6 chapters" : "Not generated", "Publish-ready chapter timestamps."],
+    ["Chapters", ready ? "Generated" : "Not generated", "Publish-ready chapter timestamps."],
     ["Audio Polish", ready ? "Normalized" : "Not generated", "Cleaned, leveled, loudness-normalized mix."],
   ];
 
@@ -1670,16 +1534,20 @@ function publishAll() {
 }
 
 function generateRundown() {
-  const angle = $("#episodeAngle").value || "A practical creator story";
-  const sponsor = $("#sponsorInput").value || "Sponsor read";
+  const angle = $("#episodeAngle").value.trim();
+  const sponsor = $("#sponsorInput").value.trim();
   const format = $("#formatSelect").value;
-  const audience = $("#audienceInput").value || "listeners";
+  const audience = $("#audienceInput").value.trim();
+  if (!angle || !audience) {
+    showToast("Add a real episode angle and audience before generating a rundown.");
+    return;
+  }
   const rundown = [
     ["00:00", `Cold open: strongest claim about ${angle.toLowerCase()}`],
     ["01:15", `${format} intro and promise for ${audience}`],
     ["06:00", "Origin story, tension, and proof points"],
     ["14:30", "Tactical segment with examples and creator tools"],
-    ["23:00", sponsor],
+    ["23:00", sponsor || "Optional sponsor/read break"],
     ["29:00", "Clip-worthy quote, recap, and platform call-to-action"],
   ];
 
@@ -1741,6 +1609,13 @@ function renderAudienceHeatmap() {
   const heatmap = $("#audienceHeatmap");
   if (!heatmap) return;
 
+  if (!audienceHeatmapData.cells.length) {
+    $("#audiencePeakPill").textContent = "No audience data";
+    heatmap.innerHTML = '<div class="empty-state compact-empty">Connect real analytics before showing audience timing.</div>';
+    $("#audienceHeatmapInsights").innerHTML = '<div class="empty-state compact-empty">Audience insights will appear after real performance data is imported.</div>';
+    return;
+  }
+
   $("#audiencePeakPill").textContent = audienceHeatmapData.peak;
   heatmap.innerHTML = `
     <div class="heatmap-corner">Day</div>
@@ -1774,26 +1649,35 @@ function renderAudienceHeatmap() {
 }
 
 function refreshAnalytics() {
-  const views = `${(16 + Math.random() * 8).toFixed(1)}K`;
-  const retention = `${Math.round(58 + Math.random() * 16)}%`;
-  const revenue = `$${Math.round(240 + Math.random() * 180)}`;
+  const totals = revenueTotals();
 
-  $("#viewsMetric").textContent = views;
-  $("#retentionMetric").textContent = retention;
-  $("#revenueMetric").textContent = revenue;
+  $("#viewsMetric").textContent = "No data";
+  $("#retentionMetric").textContent = "No data";
+  $("#revenueMetric").textContent = formatCurrency(totals.gross || 0);
   renderAudienceHeatmap();
   loadSharedFeedback();
-  showToast("Analytics refreshed.");
+  showToast("Analytics refreshed from current tester data.");
 }
 
-function runDeviceCheck() {
-  const labels = ["Ready", "Clean", "Ready", "Stable"];
-  ["#cameraCheck", "#micCheck", "#storageCheck", "#networkCheck"].forEach((selector, index) => {
-    const item = $(selector);
-    item.textContent = labels[index];
-    item.classList.add("ready");
-  });
-  showToast("Device check passed.");
+async function runDeviceCheck() {
+  try {
+    await enableDevices();
+    const storage = navigator.storage?.estimate ? await navigator.storage.estimate() : null;
+    const labels = [
+      "Permission granted",
+      "Input detected",
+      storage?.quota ? "Browser storage available" : "Local session only",
+      navigator.onLine ? "Browser online" : "Offline",
+    ];
+    ["#cameraCheck", "#micCheck", "#storageCheck", "#networkCheck"].forEach((selector, index) => {
+      const item = $(selector);
+      item.textContent = labels[index];
+      item.classList.add("ready");
+    });
+    showToast("Device check updated from this browser session.");
+  } catch (error) {
+    showToast("Device check needs camera and microphone permission.");
+  }
 }
 
 function renderClipQueue(clips) {
@@ -1814,22 +1698,28 @@ function makeClip(label) {
 }
 
 function findClips() {
-  renderClipQueue(["Content engine quote", "Workflow setup", "Edit package"]);
-  showToast("Best transcript moments found.");
+  renderClipQueue([]);
+  showToast("Record or import media before generating clip suggestions.");
 }
 
 function checkPlatforms() {
+  const hasPackage = state.assets.some((asset) => asset.type === "Final");
+  const hasTitle = Boolean($("#episodeTitle").value.trim());
   $$("#platformChecklist article").forEach((card) => {
     const status = card.querySelector("em");
-    if (status.textContent !== "Optional") status.textContent = "Ready";
+    status.textContent = hasPackage && hasTitle ? "Package ready" : "Waiting for package";
   });
-  publishStatus.textContent = "All primary platforms are publish-ready.";
-  showToast("Platform readiness checked.");
+  publishStatus.textContent = hasPackage && hasTitle ? "Package is ready for a real platform connection." : "Create a finished package before checking platforms.";
+  showToast("Platform readiness updated from current workspace data.");
 }
 
 function copyReviewLink() {
   const link = $("#reviewLink").textContent;
-  navigator.clipboard?.writeText(`https://${link}`).catch(() => {});
+  if (!selectedEpisode()) {
+    showToast("Create an episode before sharing a review link.");
+    return;
+  }
+  navigator.clipboard?.writeText(link).catch(() => {});
   showToast("Review link ready to share.");
 }
 
@@ -1872,7 +1762,7 @@ $("#clearPipelineFiltersButton").addEventListener("click", () => {
 });
 $("#generateRundownButton").addEventListener("click", generateRundown);
 $("#inviteGuestButton").addEventListener("click", () => {
-  $("#guestInviteLink").textContent = `podforge.test/guest/${crypto.randomUUID().slice(0, 8)}`;
+  $("#guestInviteLink").textContent = `${window.location.origin}/guest/${crypto.randomUUID().slice(0, 8)}`;
   showToast("Guest invite link generated.");
 });
 $("#applyBrandButton").addEventListener("click", () => showToast(`${$("#captionStyle").value} applied to exports.`));

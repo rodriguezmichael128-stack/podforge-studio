@@ -158,7 +158,7 @@ function selectedFilter() {
 
 function renderSummary(analytics) {
   const summary = analytics.summary || {};
-  const mode = titleCase(analytics.mode || "simulation");
+  const mode = titleCase(analytics.mode || "unavailable");
 
   setText("#adminModePill", mode);
   setText("#activeCreatorsMetric", formatNumber(summary.activeCreators));
@@ -238,7 +238,7 @@ function renderUsers(users) {
 
 function renderRevenue(analytics) {
   const revenue = analytics.revenue || {};
-  const modeLabel = analytics.stripeConfigured ? `${titleCase(analytics.mode)} billing` : "Simulation mode";
+  const modeLabel = analytics.stripeConfigured ? `${titleCase(analytics.mode)} billing` : "Stripe not connected";
   setText("#revenueModePill", modeLabel);
   setText("#collectedRevenueMetric", formatMoney(revenue.collected));
   setText("#scheduledRevenueCardMetric", formatMoney(revenue.scheduled));
@@ -348,7 +348,7 @@ function renderPlatforms(platforms) {
 
   const grid = $("#adminPlatformGrid");
   if (!platformItems.length) {
-    grid.innerHTML = '<div class="empty-state">No platform analytics match the current search.</div>';
+    grid.innerHTML = '<div class="empty-state">No real platform analytics have been connected yet.</div>';
     return;
   }
 
@@ -389,7 +389,7 @@ function renderAudienceHeatmap(audienceHeatmap) {
   const slots = Array.isArray(data.slots) ? data.slots : [];
   const heatmap = $("#adminAudienceHeatmap");
 
-  setText("#adminAudiencePeakPill", summary.peakWindow || "Peak window");
+  setText("#adminAudiencePeakPill", summary.peakWindow || "No audience data");
 
   if (!days.length || !slots.length) {
     heatmap.innerHTML = '<div class="empty-state">Audience heatmap will appear here.</div>';
@@ -432,7 +432,7 @@ function renderAudienceHeatmap(audienceHeatmap) {
       <article class="audience-summary-card">
         <span>Hottest segment</span>
         <strong>${escapeHtml(summary.hottestSegment || "Not enough data")}</strong>
-        <small>${escapeHtml(summary.strongestPlatform || "Platform")} - ${escapeHtml(summary.topRegion || "Region")} - ${formatNumber(summary.revenueLift || 0)}% revenue lift</small>
+        <small>${summary.strongestPlatform ? `${escapeHtml(summary.strongestPlatform)} - ${escapeHtml(summary.topRegion || "Unknown region")} - ${formatNumber(summary.revenueLift || 0)}% revenue lift` : "Audience summary will appear after real analytics are imported."}</small>
       </article>
       ${segmentItems
         .map(
@@ -468,11 +468,17 @@ function renderOperations(analytics) {
   const operations = analytics.operations || {};
   const creators = analytics.creators || {};
   setText("#uptimeMetric", `${operations.uptime || "--"} uptime`);
+
+  if (!Object.keys(operations).length && !creators.mandatesActive) {
+    $("#operationsGrid").innerHTML = '<div class="empty-state">Operational metrics will appear after real backend events are captured.</div>';
+    return;
+  }
+
   $("#operationsGrid").innerHTML = `
-    <article><span>Storage used</span><strong>${escapeHtml(operations.storageUsed)}</strong></article>
+    <article><span>Storage used</span><strong>${escapeHtml(operations.storageUsed || "--")}</strong></article>
     <article><span>Processing jobs</span><strong>${formatNumber(operations.processingJobs)}</strong></article>
     <article><span>Failed jobs</span><strong>${formatNumber(operations.failedJobs)}</strong></article>
-    <article><span>Avg edit time</span><strong>${escapeHtml(operations.averageEditTime)}</strong></article>
+    <article><span>Avg edit time</span><strong>${escapeHtml(operations.averageEditTime || "--")}</strong></article>
     <article><span>Billing mandates</span><strong>${formatNumber(creators.mandatesActive)}</strong></article>
     <article><span>Open support</span><strong>${formatNumber(operations.openSupportItems)}</strong></article>
   `;

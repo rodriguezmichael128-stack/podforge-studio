@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PodForge Studio</title>
-    <link rel="stylesheet" href="styles.css?v=professional-command-1" />
+    <link rel="stylesheet" href="styles.css?v=real-feedback-1" />
   </head>
   <body>
     <section class="auth-screen" id="authScreen" aria-labelledby="auth-title">
@@ -214,19 +214,15 @@
             <div class="script-layout">
               <label>
                 Episode angle
-                <input id="episodeAngle" type="text" value="Why creator-led podcasts are becoming full media businesses" />
+                <input id="episodeAngle" type="text" placeholder="Add the episode angle" />
               </label>
               <label>
                 Sponsor read
-                <input id="sponsorInput" type="text" value="30-second mid-roll for PodForge Pro" />
+                <input id="sponsorInput" type="text" placeholder="Add sponsor read details if applicable" />
               </label>
             </div>
             <ol class="rundown-list" id="rundownList">
-              <li><span>00:00</span> Cold open with strongest creator insight</li>
-              <li><span>01:30</span> Intro, guest setup, and promise of the episode</li>
-              <li><span>08:00</span> Main segment: tools, monetization, audience growth</li>
-              <li><span>22:00</span> Sponsor read and listener call-to-action</li>
-              <li><span>31:00</span> Closing takeaways and clip-worthy quote</li>
+              <li><span>--</span>Generate or write a real rundown for this episode.</li>
             </ol>
           </section>
 
@@ -239,23 +235,10 @@
               <button class="secondary-button compact" type="button" id="inviteGuestButton">Invite</button>
             </div>
             <div class="guest-list">
-              <article>
-                <div class="guest-avatar">AR</div>
-                <div>
-                  <strong>Ari Rivera</strong>
-                  <span>Confirmed, release signed</span>
-                </div>
-              </article>
-              <article>
-                <div class="guest-avatar yellow">KM</div>
-                <div>
-                  <strong>Kai Morgan</strong>
-                  <span>Needs bio and headshot</span>
-                </div>
-              </article>
+              <div class="empty-state compact-empty">Invited guests will appear here after you create a real invite.</div>
             </div>
             <div class="invite-box">
-              <strong id="guestInviteLink">podforge.test/guest/new-creator</strong>
+              <strong id="guestInviteLink">Invite link will appear here</strong>
               <small>Guest invite links will collect device checks, consent, bio, socials, and upload permissions.</small>
             </div>
           </section>
@@ -274,25 +257,22 @@
               <label>
                 Camera
                 <select id="cameraSelect">
-                  <option>FaceTime HD Camera</option>
-                  <option>USB Creator Cam</option>
+                  <option>Use browser-selected camera</option>
                   <option>Screen capture only</option>
                 </select>
               </label>
               <label>
                 Microphone
                 <select id="microphoneSelect">
-                  <option>Studio USB Mic</option>
-                  <option>Built-in Microphone</option>
+                  <option>Use browser-selected microphone</option>
                   <option>Guest remote track</option>
                 </select>
               </label>
               <label>
                 Speaker
                 <select id="speakerSelect">
-                  <option>Default speakers</option>
+                  <option>Use system default speakers</option>
                   <option>Headphones</option>
-                  <option>External monitor</option>
                 </select>
               </label>
             </div>
@@ -354,7 +334,7 @@
             <div class="session-meta">
               <label>
                 Episode title
-                <input id="episodeTitle" type="text" value="The New Creator Economy" />
+                <input id="episodeTitle" type="text" placeholder="Untitled episode" />
               </label>
               <label>
                 Format
@@ -367,7 +347,7 @@
               </label>
               <label>
                 Audience
-                <input id="audienceInput" type="text" value="indie creators and podcasters" />
+                <input id="audienceInput" type="text" placeholder="Who is this episode for?" />
               </label>
             </div>
 
@@ -453,7 +433,7 @@
             <div class="brand-kit">
               <div class="cover-preview">
                 <span>PF</span>
-                <strong>The New Creator Economy</strong>
+                <strong>Episode title</strong>
               </div>
               <div class="swatch-row" aria-label="Brand colors">
                 <button type="button" class="swatch coral active" data-brand="coral" aria-label="Coral brand"></button>
@@ -510,7 +490,7 @@
             </div>
 
             <div class="monetization-box">
-              <span>Estimated package</span>
+              <span>Finished package</span>
               <strong id="packageSummary">No finished episode yet</strong>
               <small id="publishStatus">Connect accounts to enable real uploads in the next build.</small>
             </div>
@@ -548,9 +528,7 @@
             </div>
             <div class="transcript-layout">
               <div class="transcript-list" id="transcriptList">
-                <article><span>00:42</span><p>The mistake creators make is treating a podcast like one file instead of a content engine.</p><button type="button" data-clip="Content engine quote">Make Clip</button></article>
-                <article><span>08:15</span><p>A good show workflow starts before recording: guest prep, device checks, and a clear publishing target.</p><button type="button" data-clip="Workflow setup">Make Clip</button></article>
-                <article><span>19:30</span><p>The edit should create the full episode, the short clips, the captions, and the publish package at once.</p><button type="button" data-clip="Edit package">Make Clip</button></article>
+                <div class="empty-state compact-empty">Transcript highlights will appear after real media is recorded or imported.</div>
               </div>
               <div class="clip-queue">
                 <h3>Clip Queue</h3>
@@ -567,13 +545,13 @@
                 <p class="eyebrow">Quality control</p>
                 <h2 id="review-title">Review Checklist</h2>
               </div>
-              <span class="count-pill" id="reviewScore">3/6 ready</span>
+              <span class="count-pill" id="reviewScore">0/6 ready</span>
             </div>
             <div class="review-list">
-              <label><input type="checkbox" checked /> Audio loudness normalized</label>
-              <label><input type="checkbox" checked /> Captions generated</label>
+              <label><input type="checkbox" /> Audio loudness normalized</label>
+              <label><input type="checkbox" /> Captions generated</label>
               <label><input type="checkbox" /> Thumbnail approved</label>
-              <label><input type="checkbox" checked /> Monetization-safe language checked</label>
+              <label><input type="checkbox" /> Monetization-safe language checked</label>
               <label><input type="checkbox" /> Guest release complete</label>
               <label><input type="checkbox" /> Publish metadata approved</label>
             </div>
@@ -588,10 +566,10 @@
               <button class="secondary-button compact" type="button" id="refreshAnalyticsButton">Refresh</button>
             </div>
             <div class="analytics-grid">
-              <div><span>Projected views</span><strong id="viewsMetric">18.4K</strong></div>
-              <div><span>Clip retention</span><strong id="retentionMetric">64%</strong></div>
-              <div><span>Revenue signal</span><strong id="revenueMetric">$312</strong></div>
-              <div><span>Tester notes</span><strong id="notesMetric">7</strong></div>
+              <div><span>Published views</span><strong id="viewsMetric">No data</strong></div>
+              <div><span>Clip retention</span><strong id="retentionMetric">No data</strong></div>
+              <div><span>Tracked revenue</span><strong id="revenueMetric">$0</strong></div>
+              <div><span>Tester notes</span><strong id="notesMetric">0</strong></div>
             </div>
             <section class="audience-heatmap-block" aria-labelledby="audience-heatmap-title">
               <div class="mini-section-heading">
@@ -606,7 +584,7 @@
             </section>
             <div class="feedback-box">
               <strong>Top note</strong>
-              <p id="feedbackNote">Make the guest invite flow clearer and add a password screen before wider testing.</p>
+              <p id="feedbackNote">Tester feedback is sent privately to the admin portal.</p>
             </div>
             <div class="feedback-inbox" id="feedbackInbox">
               <div class="empty-state compact-empty">Tester feedback will appear here.</div>
@@ -624,10 +602,10 @@
               <button class="secondary-button compact" type="button" id="checkPlatformsButton">Check Readiness</button>
             </div>
             <div class="platform-checklist" id="platformChecklist">
-              <article><span>YT</span><div><strong>YouTube</strong><p>Title, thumbnail, description, monetization status.</p></div><em>Needs thumbnail</em></article>
-              <article><span>SP</span><div><strong>Spotify</strong><p>Audio master, show category, explicit rating.</p></div><em>Ready</em></article>
-              <article><span>TT</span><div><strong>TikTok</strong><p>Vertical clips, captions, hook text, tags.</p></div><em>Needs clips</em></article>
-              <article><span>PA</span><div><strong>Patreon</strong><p>Member description, early-access flag, attachment.</p></div><em>Optional</em></article>
+              <article><span>YT</span><div><strong>YouTube</strong><p>Title, thumbnail, description, monetization status.</p></div><em>Waiting for package</em></article>
+              <article><span>SP</span><div><strong>Spotify</strong><p>Audio master, show category, explicit rating.</p></div><em>Waiting for package</em></article>
+              <article><span>TT</span><div><strong>TikTok</strong><p>Vertical clips, captions, hook text, tags.</p></div><em>Waiting for package</em></article>
+              <article><span>PA</span><div><strong>Patreon</strong><p>Member description, early-access flag, attachment.</p></div><em>Waiting for package</em></article>
             </div>
           </section>
         </section>
@@ -649,17 +627,17 @@
             <div class="revenue-summary">
               <article>
                 <span>Tracked gross</span>
-                <strong id="trackedGrossMetric">$3,420.00</strong>
+                <strong id="trackedGrossMetric">$0.00</strong>
                 <small>Current pay periods</small>
               </article>
               <article>
                 <span>PodForge 10%</span>
-                <strong id="podforgeFeeMetric">$342.00</strong>
+                <strong id="podforgeFeeMetric">$0.00</strong>
                 <small>Collected or scheduled</small>
               </article>
               <article>
                 <span>Creator 90%</span>
-                <strong id="creatorShareMetric">$3,078.00</strong>
+                <strong id="creatorShareMetric">$0.00</strong>
                 <small>Before taxes and adjustments</small>
               </article>
               <article>
@@ -714,7 +692,7 @@
                 <p class="eyebrow">Linked monetization sources</p>
                 <h2 id="source-title">Platform Revenue Sources</h2>
               </div>
-              <span class="count-pill" id="connectedRevenueCount">2 connected</span>
+              <span class="count-pill" id="connectedRevenueCount">0 connected</span>
             </div>
             <div class="revenue-source-grid" id="revenueSourceGrid"></div>
           </section>
@@ -743,12 +721,11 @@
             <div class="review-share-layout">
               <div class="review-player">
                 <span>Review Player</span>
-                <strong id="reviewEpisodeTitle">The New Creator Economy</strong>
+                <strong id="reviewEpisodeTitle">No episode selected</strong>
               </div>
               <div class="review-comments">
-                <strong id="reviewLink">podforge.review/the-new-creator-economy</strong>
-                <article><span>02:14</span><p>Tighten the intro before the sponsor read.</p></article>
-                <article><span>18:45</span><p>This quote should become a short clip.</p></article>
+                <strong id="reviewLink">Create an episode to generate a review link</strong>
+                <div class="empty-state compact-empty">Guest comments will appear after a real review page is shared.</div>
                 <label class="terms-check"><input type="checkbox" id="guestApprovalCheck" /> Guest approved for publishing</label>
               </div>
             </div>
@@ -975,6 +952,6 @@
     </section>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="app.js?v=professional-command-1"></script>
+    <script src="app.js?v=real-feedback-1"></script>
   </body>
 </html>
